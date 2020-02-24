@@ -1,0 +1,673 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * Copyright (C) STMicroelectronics 2017 - All Rights Reserved
+ * Author: Ludovic Barre <ludovic.barre@st.com> for STMicroelectronics.
+ */
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/stm32mp13-clks.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/reset/stm32mp13-resets.h>
+#include <dt-bindings/thermal/thermal.h>
+#include <dt-bindings/pinctrl/stm32-pinfunc.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-a7";
+			device_type = "cpu";
+			reg = <0>;
+			clocks = <&scmi0_clk CK_SCMI0_MPU>;
+			clock-names = "cpu";
+		};
+	};
+
+	scmi_sram: sram@2ffff000 {
+		compatible = "mmio-sram";
+		reg = <0x2ffff000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0x2ffff000 0x1000>;
+
+		scmi0_shm: scmi_shm@0 {
+			reg = <0 0x80>;
+		};
+
+		scmi1_shm: scmi_shm@200 {
+			reg = <0x200 0x80>;
+		};
+	};
+
+	firmware {
+		scmi0: scmi0 {
+			compatible = "arm,scmi-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			arm,smc-id = <0x82002000>;
+			shmem = <&scmi0_shm>;
+
+			scmi0_clk: protocol@14 {
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			scmi0_reset: protocol@16 {
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
+		};
+
+		scmi1: scmi1 {
+			compatible = "arm,scmi-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			arm,smc-id = <0x82002001>;
+			shmem = <&scmi1_shm>;
+			status = "disabled";
+
+			scmi1_clk: protocol@14 {
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
+	intc: interrupt-controller@a0021000 {
+		compatible = "arm,cortex-a7-gic";
+		#interrupt-cells = <3>;
+		interrupt-controller;
+		reg = <0xa0021000 0x1000>,
+		      <0xa0022000 0x2000>;
+	};
+
+	timer {
+		compatible = "arm,armv7-timer";
+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+		interrupt-parent = <&intc>;
+		always-on;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&intc>;
+		ranges;
+
+		timers2: timer@40000000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40000000 0x400>;
+		};
+
+		timers3: timer@40001000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40001000 0x400>;
+			status = "disabled";
+		};
+
+		timers4: timer@40002000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002000 0x400>;
+			status = "disabled";
+		};
+
+		timers5: timer@40003000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003000 0x400>;
+			status = "disabled";
+		};
+
+		timers6: timer@40004000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40004000 0x400>;
+			status = "disabled";
+		};
+
+		timers7: timer@40005000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005000 0x400>;
+			status = "disabled";
+		};
+
+		lptimer1: timer@40009000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009000 0x400>;
+			status = "disabled";
+		};
+
+		spi2: spi@4000b000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4000b000 0x400>;
+			status = "disabled";
+		};
+
+		spi3: spi@4000c000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4000c000 0x400>;
+			status = "disabled";
+		};
+
+		spdifrx: audio-controller@4000d000 {
+			reg = <0x4000d000 0x400>;
+			status = "disabled";
+		};
+
+		usart3: serial@4000f000 {
+			reg = <0x4000f000 0x400>;
+			status = "disabled";
+		};
+
+		uart4: serial@40010000 {
+			compatible = "st,stm32h7-uart";
+			reg = <0x40010000 0x400>;
+			interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&rcc UART4_K>;
+			resets = <&rcc UART4_R>;
+			status = "disabled";
+		};
+
+		uart5: serial@40011000 {
+			reg = <0x40011000 0x400>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40012000 {
+			reg = <0x40012000 0x400>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40013000 {
+			reg = <0x40013000 0x400>;
+			status = "disabled";
+		};
+
+		uart7: serial@40018000 {
+			reg = <0x40018000 0x400>;
+			status = "disabled";
+		};
+
+		uart8: serial@40019000 {
+			reg = <0x40019000 0x400>;
+			status = "disabled";
+		};
+
+		timers1: timer@44000000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44000000 0x400>;
+			status = "disabled";
+		};
+
+		timers8: timer@44001000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44001000 0x400>;
+			status = "disabled";
+		};
+
+		usart6: serial@44003000 {
+			reg = <0x44003000 0x400>;
+			status = "disabled";
+		};
+
+		spi1: spi@44004000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004000 0x400>;
+			status = "disabled";
+		};
+
+		sai1: sai@4400a000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+		};
+
+		sai2: sai@4400b000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		dfsdm: dfsdm@4400d000 {
+			reg = <0x4400d000 0x800>;
+			status = "disabled";
+		};
+
+		dma1: dma@48000000 {
+			reg = <0x48000000 0x400>;
+		};
+
+		dma2: dma@48001000 {
+			reg = <0x48001000 0x400>;
+		};
+
+		dmamux1: dma-router@48002000 {
+			reg = <0x48002000 0x400>;
+		};
+
+		adc2: adc@48004000 {
+			reg = <0x48004000 0x400>;
+			status = "disabled";
+		};
+
+		usbotg_hs: usb-otg@49000000 {
+			reg = <0x49000000 0x40000>;
+			status = "disabled";
+		};
+
+		usart1: serial@4c000000 {
+			reg = <0x4c000000 0x400>;
+			status = "disabled";
+		};
+
+		usart2: serial@4c001000 {
+			reg = <0x4c001000 0x400>;
+			status = "disabled";
+		};
+
+		spi4: spi@4c002000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c002000 0x400>;
+			status = "disabled";
+		};
+
+		spi5: spi@4c003000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c003000 0x400>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@4c004000 {
+			reg = <0x4c004000 0x400>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@4c005000 {
+			reg = <0x4c005000 0x400>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@4c006000 {
+			reg = <0x4c006000 0x400>;
+			status = "disabled";
+		};
+
+		timers12: timer@4c007000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c007000 0x400>;
+			status = "disabled";
+		};
+
+		timers13: timer@4c008000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c008000 0x400>;
+			status = "disabled";
+		};
+
+		timers14: timer@4c009000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c009000 0x400>;
+			status = "disabled";
+		};
+
+		timers15: timer@4c00a000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c00a000 0x400>;
+			status = "disabled";
+		};
+
+		timers16: timer@4c00b000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c00b000 0x400>;
+			status = "disabled";
+		};
+
+		timers17: timer@4c00c000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c00c000 0x400>;
+			status = "disabled";
+		};
+
+		rcc: rcc@50000000 {
+			compatible = "st,stm32mp13-rcc", "syscon";
+			reg = <0x50000000 0x1000>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
+
+			clock-names = "hse", "hsi", "csi", "lse", "lsi";
+			clocks = <&scmi0_clk CK_SCMI0_HSE>,
+				 <&scmi0_clk CK_SCMI0_HSI>,
+				 <&scmi0_clk CK_SCMI0_CSI>,
+				 <&scmi0_clk CK_SCMI0_LSE>,
+				 <&scmi0_clk CK_SCMI0_LSI>;
+		};
+
+		exti: interrupt-controller@5000d000 {
+			compatible = "st,stm32mp1-exti", "syscon";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			reg = <0x5000d000 0x400>;
+		};
+
+		syscfg: syscon@50020000 {
+			compatible = "st,stm32mp157-syscfg", "syscon";
+			reg = <0x50020000 0x400>;
+			clocks = <&rcc SYSCFG>;
+		};
+
+		lptimer2: timer@50021000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50021000 0x400>;
+			status = "disabled";
+		};
+
+		lptimer3: timer@50022000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50022000 0x400>;
+			status = "disabled";
+		};
+
+		lptimer4: timer@50023000 {
+			reg = <0x50023000 0x400>;
+			status = "disabled";
+		};
+
+		lptimer5: timer@50024000 {
+			reg = <0x50024000 0x400>;
+			status = "disabled";
+		};
+
+		vrefbuf: vrefbuf@50025000 {
+			reg = <0x50025000 0x8>;
+			status = "disabled";
+		};
+
+		dts: thermal@50028000 {
+			reg = <0x50028000 0x100>;
+			status = "disabled";
+		};
+
+		hdp: hdp@5002a000 {
+			reg = <0x5002a000 0x400>;
+			status = "disabled";
+		};
+
+		hash: hash@54003000 {
+			reg = <0x54003000 0x400>;
+			status = "disabled";
+		};
+
+		rng: rng@54004000 {
+			reg = <0x54004000 0x400>;
+			status = "disabled";
+		};
+
+		mdma: dma@58000000 {
+			reg = <0x58000000 0x1000>;
+		};
+
+		fmc: nand-controller@58002000 {
+			status = "disabled";
+		};
+
+		qspi: spi@58003000 {
+			status = "disabled";
+		};
+
+		sdmmc1: mmc@58005000 {
+			compatible = "arm,pl18x", "arm,primecell";
+			arm,primecell-periphid = <0x00253180>;
+			reg = <0x58005000 0x1000>, <0x58006000 0x1000>;
+			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "cmd_irq";
+			clocks = <&rcc SDMMC1_K>;
+			clock-names = "apb_pclk";
+			resets = <&rcc SDMMC1_R>;
+			cap-sd-highspeed;
+			cap-mmc-highspeed;
+			max-frequency = <120000000>;
+			status = "disabled";
+		};
+
+		sdmmc2: mmc@58007000 {
+			compatible = "arm,pl18x", "arm,primecell";
+			arm,primecell-periphid = <0x00253180>;
+			reg = <0x58007000 0x1000>, <0x58008000 0x1000>;
+			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "cmd_irq";
+			clocks = <&rcc SDMMC2_K>;
+			clock-names = "apb_pclk";
+			resets = <&rcc SDMMC2_R>;
+			cap-sd-highspeed;
+			cap-mmc-highspeed;
+			max-frequency = <120000000>;
+			status = "disabled";
+		};
+
+		crc1: crc@58009000 {
+			reg = <0x58009000 0x400>;
+			status = "disabled";
+		};
+
+		eth1: ethernet@5800a000 {
+			reg = <0x5800a000 0x2000>;
+			status = "disabled";
+		};
+
+		usbh_ohci: usbh-ohci@5800c000 {
+			reg = <0x5800c000 0x1000>;
+			status = "disabled";
+		};
+
+		usbh_ehci: usbh-ehci@5800d000 {
+			reg = <0x5800d000 0x1000>;
+			status = "disabled";
+		};
+
+		iwdg2: watchdog@5a002000 {
+			reg = <0x5a002000 0x400>;
+			status = "disabled";
+		};
+
+		usbphyc: usbphyc@5a006000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#clock-cells = <0>;
+			reg = <0x5a006000 0x1000>;
+			status = "disabled";
+		};
+
+		rtc: rtc@5c004000 {
+			reg = <0x5c004000 0x400>;
+			status = "disabled";
+		};
+
+		bsec: efuse@5c005000 {
+			compatible = "st,stm32mp15-bsec";
+			reg = <0x5c005000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			part_number_otp: part_number_otp@4 {
+				reg = <0x4 0x2>;
+			};
+			ts_cal1: calib@5c {
+				reg = <0x5c 0x2>;
+			};
+			ts_cal2: calib@5e {
+				reg = <0x5e 0x2>;
+			};
+		};
+
+		tamp: tamp@5c00a000 {
+			reg = <0x5c00a000 0x400>;
+		};
+
+		/*
+		 * Break node order to solve dependency probe issue between
+		 * pinctrl and exti.
+		 */
+		pinctrl: pin-controller@50002000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "st,stm32mp157-pinctrl";
+			ranges = <0 0x50002000 0x8400>;
+			interrupt-parent = <&exti>;
+			st,syscfg = <&exti 0x60 0xff>;
+			pins-are-numbered;
+			st,package = <STM32MP_PKG_AA>;
+
+			gpioa: gpio@50002000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x0 0x400>;
+				clocks = <&rcc GPIOA>;
+				st,bank-name = "GPIOA";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 0 16>;
+			};
+
+			gpiob: gpio@50003000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x1000 0x400>;
+				clocks = <&rcc GPIOB>;
+				st,bank-name = "GPIOB";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 16 16>;
+			};
+
+			gpioc: gpio@50004000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x2000 0x400>;
+				clocks = <&rcc GPIOC>;
+				st,bank-name = "GPIOC";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 32 16>;
+			};
+
+			gpiod: gpio@50005000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x3000 0x400>;
+				clocks = <&rcc GPIOD>;
+				st,bank-name = "GPIOD";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 48 16>;
+			};
+
+			gpioe: gpio@50006000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x4000 0x400>;
+				clocks = <&rcc GPIOE>;
+				st,bank-name = "GPIOE";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 64 16>;
+			};
+
+			gpiof: gpio@50007000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x5000 0x400>;
+				clocks = <&rcc GPIOF>;
+				st,bank-name = "GPIOF";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 80 16>;
+			};
+
+			gpiog: gpio@50008000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x6000 0x400>;
+				clocks = <&rcc GPIOG>;
+				st,bank-name = "GPIOG";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 96 16>;
+			};
+
+			gpioh: gpio@50009000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x7000 0x400>;
+				clocks = <&rcc GPIOH>;
+				st,bank-name = "GPIOH";
+				status = "okay";
+				ngpios = <16>;
+				gpio-ranges = <&pinctrl 0 112 16>;
+			};
+
+			gpioi: gpio@5000a000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				reg = <0x8000 0x400>;
+				clocks = <&rcc GPIOI>;
+				st,bank-name = "GPIOI";
+				status = "okay";
+				ngpios = <8>;
+				gpio-ranges = <&pinctrl 0 128 8>;
+			};
+		};
+	};
+};

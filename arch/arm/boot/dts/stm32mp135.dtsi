@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * Copyright (C) STMicroelectronics 2019 - All Rights Reserved
+ * Author: Alexandre Torgue <alexandre.torgue@st.com> for STMicroelectronics.
+ */
+
+#include "stm32mp133.dtsi"
+
+/ {
+	soc {
+		adc1: adc@48003000 {
+			reg = <0x48003000 0x400>;
+			status = "disabled";
+		};
+
+		dcmipp: dcmipp@5a000000 {
+			reg = <0x5a000000 0x400>;
+			status = "disabled";
+		};
+
+		ltdc: display-controller@5a001000 {
+			reg = <0x5a001000 0x400>;
+			status = "disabled";
+		};
+	};
+};
