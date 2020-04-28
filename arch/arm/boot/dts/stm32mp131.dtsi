@@ -8,7 +8,6 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/reset/stm32mp13-resets.h>
 #include <dt-bindings/thermal/thermal.h>
-#include <dt-bindings/pinctrl/stm32-pinfunc.h>
 
 / {
 	#address-cells = <1>;
@@ -545,12 +544,11 @@
 		pinctrl: pin-controller@50002000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			compatible = "st,stm32mp157-pinctrl";
+			compatible = "st,stm32mp135-pinctrl";
 			ranges = <0 0x50002000 0x8400>;
 			interrupt-parent = <&exti>;
 			st,syscfg = <&exti 0x60 0xff>;
 			pins-are-numbered;
-			st,package = <STM32MP_PKG_AA>;
 
 			gpioa: gpio@50002000 {
 				gpio-controller;
