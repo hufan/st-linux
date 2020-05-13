@@ -8,11 +8,6 @@
 
 / {
 	soc {
-		adc1: adc@48003000 {
-			reg = <0x48003000 0x400>;
-			status = "disabled";
-		};
-
 		dcmipp: dcmipp@5a000000 {
 			reg = <0x5a000000 0x400>;
 			status = "disabled";
