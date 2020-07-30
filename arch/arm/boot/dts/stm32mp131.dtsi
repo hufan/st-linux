@@ -650,8 +650,8 @@
 				clocks = <&rcc GPIOH>;
 				st,bank-name = "GPIOH";
 				status = "okay";
-				ngpios = <16>;
-				gpio-ranges = <&pinctrl 0 112 16>;
+				ngpios = <15>;
+				gpio-ranges = <&pinctrl 0 112 15>;
 			};
 
 			gpioi: gpio@5000a000 {
