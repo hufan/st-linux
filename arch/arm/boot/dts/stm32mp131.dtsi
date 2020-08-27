@@ -26,6 +26,13 @@
 		};
 	};
 
+	arm-pmu {
+		compatible = "arm,cortex-a7-pmu";
+		interrupts = <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-affinity = <&cpu0>;
+		interrupt-parent = <&intc>;
+	};
+
 	scmi_sram: sram@2ffff000 {
 		compatible = "mmio-sram";
 		reg = <0x2ffff000 0x1000>;
