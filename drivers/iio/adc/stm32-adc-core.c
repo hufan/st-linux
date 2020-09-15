@@ -322,9 +322,10 @@ static const struct stm32_adc_common_regs stm32h7_adc_common_regs = {
 static const struct stm32_adc_common_regs stm32mp13_adc_common_regs = {
 	.csr = STM32H7_ADC_CSR,
 	.ccr = STM32H7_ADC_CCR,
-	.eoc1_msk = STM32H7_EOC_MST | STM32H7_OVR_MST,
+	.eoc_msk = { STM32H7_EOC_MST},
+	.ovr_msk = { STM32H7_OVR_MST},
 	.ier = STM32H7_ADC_IER,
-	.eocie_msk = STM32H7_EOCIE | STM32H7_OVRIE,
+	.eocie_msk = STM32H7_EOCIE,
 };
 
 static const unsigned int stm32_adc_offset[STM32_ADC_MAX_ADCS] = {
