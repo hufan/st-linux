@@ -646,7 +646,7 @@
 			};
 		};
 
-		dma1: dma@48000000 {
+		dma1: dma-controller@48000000 {
 			compatible = "st,stm32-dma";
 			reg = <0x48000000 0x400>;
 			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>,
@@ -673,7 +673,7 @@
 			dma-names = "ch0", "ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7";
 		};
 
-		dma2: dma@48001000 {
+		dma2: dma-controller@48001000 {
 			compatible = "st,stm32-dma";
 			reg = <0x48001000 0x400>;
 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
@@ -1140,7 +1140,7 @@
 			status = "disabled";
 		};
 
-		mdma: dma@58000000 {
+		mdma: dma-controller@58000000 {
 			compatible = "st,stm32h7-mdma";
 			reg = <0x58000000 0x1000>;
 			interrupts = <GIC_SPI 107 IRQ_TYPE_LEVEL_HIGH>;
