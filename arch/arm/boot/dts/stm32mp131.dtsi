@@ -1367,7 +1367,6 @@
 				reg = <0x0 0x400>;
 				clocks = <&rcc GPIOA>;
 				st,bank-name = "GPIOA";
-				status = "okay";
 				ngpios = <16>;
 				gpio-ranges = <&pinctrl 0 0 16>;
 			};
@@ -1380,7 +1379,6 @@
 				reg = <0x1000 0x400>;
 				clocks = <&rcc GPIOB>;
 				st,bank-name = "GPIOB";
-				status = "okay";
 				ngpios = <16>;
 				gpio-ranges = <&pinctrl 0 16 16>;
 			};
@@ -1393,7 +1391,6 @@
 				reg = <0x2000 0x400>;
 				clocks = <&rcc GPIOC>;
 				st,bank-name = "GPIOC";
-				status = "okay";
 				ngpios = <16>;
 				gpio-ranges = <&pinctrl 0 32 16>;
 			};
@@ -1406,7 +1403,6 @@
 				reg = <0x3000 0x400>;
 				clocks = <&rcc GPIOD>;
 				st,bank-name = "GPIOD";
-				status = "okay";
 				ngpios = <16>;
 				gpio-ranges = <&pinctrl 0 48 16>;
 			};
@@ -1419,7 +1415,6 @@
 				reg = <0x4000 0x400>;
 				clocks = <&rcc GPIOE>;
 				st,bank-name = "GPIOE";
-				status = "okay";
 				ngpios = <16>;
 				gpio-ranges = <&pinctrl 0 64 16>;
 			};
@@ -1432,7 +1427,6 @@
 				reg = <0x5000 0x400>;
 				clocks = <&rcc GPIOF>;
 				st,bank-name = "GPIOF";
-				status = "okay";
 				ngpios = <16>;
 				gpio-ranges = <&pinctrl 0 80 16>;
 			};
@@ -1445,7 +1439,6 @@
 				reg = <0x6000 0x400>;
 				clocks = <&rcc GPIOG>;
 				st,bank-name = "GPIOG";
-				status = "okay";
 				ngpios = <16>;
 				gpio-ranges = <&pinctrl 0 96 16>;
 			};
@@ -1458,7 +1451,6 @@
 				reg = <0x7000 0x400>;
 				clocks = <&rcc GPIOH>;
 				st,bank-name = "GPIOH";
-				status = "okay";
 				ngpios = <15>;
 				gpio-ranges = <&pinctrl 0 112 15>;
 			};
@@ -1471,7 +1463,6 @@
 				reg = <0x8000 0x400>;
 				clocks = <&rcc GPIOI>;
 				st,bank-name = "GPIOI";
-				status = "okay";
 				ngpios = <8>;
 				gpio-ranges = <&pinctrl 0 128 8>;
 			};
