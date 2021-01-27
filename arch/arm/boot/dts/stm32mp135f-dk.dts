@@ -183,3 +183,15 @@
 	/delete-property/dma-names;
 	status = "okay";
 };
+
+&usbphyc {
+	status = "okay";
+};
+
+&usbphyc_port0 {
+	phy-supply = <&scmi_vdd_usb>;
+};
+
+&usbphyc_port1 {
+	phy-supply = <&scmi_vdd_usb>;
+};
