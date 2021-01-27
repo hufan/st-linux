@@ -1305,7 +1305,10 @@
 		};
 
 		iwdg2: watchdog@5a002000 {
+			compatible = "st,stm32mp1-iwdg";
 			reg = <0x5a002000 0x400>;
+			clocks = <&rcc IWDG2>, <&scmi0_clk CK_SCMI0_LSI>;
+			clock-names = "pclk", "lsi";
 			status = "disabled";
 		};
 
