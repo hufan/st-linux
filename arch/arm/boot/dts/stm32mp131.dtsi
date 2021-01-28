@@ -1340,7 +1340,12 @@
 		};
 
 		rtc: rtc@5c004000 {
+			compatible = "st,stm32mp1-rtc";
 			reg = <0x5c004000 0x400>;
+			clocks = <&scmi0_clk CK_SCMI0_RTCAPB>,
+				 <&scmi0_clk CK_SCMI0_RTC>;
+			clock-names = "pclk", "rtc_ck";
+			interrupts-extended = <&exti 19 IRQ_TYPE_LEVEL_HIGH>;
 			status = "disabled";
 		};
 
