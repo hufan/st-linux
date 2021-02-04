@@ -74,8 +74,12 @@ This binding uses the common regulator binding[6].
 SCMI Regulators are grouped under a 'regulators' node which in turn is a child
 of the SCMI Voltage protocol node inside the desired SCMI instance node.
 
-Required properties:
+Required properties: at least one of:
  - reg : shall identify an existent SCMI Voltage Domain.
+ - voltd-name : shall identify an existent SCMI Voltage Domain.
+
+At least one of reg and voltd-name property must be defined to identify the
+SCMI voltage domain bound to the voltage regulator, reg takes precedence.
 
 Optional properties:
  - regulator-min-microvolt: when defined should be non-negative.
