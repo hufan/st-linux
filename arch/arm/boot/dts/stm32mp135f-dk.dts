@@ -107,6 +107,10 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 &scmi0_regu {
 	scmi_vddcpu: voltd-vddcpu {
 		voltd-name = "vddcpu";
