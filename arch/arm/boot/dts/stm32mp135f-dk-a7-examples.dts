@@ -16,3 +16,11 @@
 &adc_1 {
 	status = "okay";
 };
+
+&timers4 {
+	status = "okay";
+};
+
+&timers8 {
+	status = "okay";
+};
