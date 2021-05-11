@@ -438,6 +438,9 @@
 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc USART3_K>;
 			resets = <&rcc USART3_R>;
+			dmas = <&dmamux1 45 0x400 0x5>,
+			       <&dmamux1 46 0x400 0x1>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
@@ -461,6 +464,9 @@
 			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc UART5_K>;
 			resets = <&rcc UART5_R>;
+			dmas = <&dmamux1 65 0x400 0x5>,
+			       <&dmamux1 66 0x400 0x1>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
@@ -506,6 +512,9 @@
 			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc UART7_K>;
 			resets = <&rcc UART7_R>;
+			dmas = <&dmamux1 79 0x400 0x5>,
+			       <&dmamux1 80 0x400 0x1>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
@@ -515,6 +524,9 @@
 			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc UART8_K>;
 			resets = <&rcc UART8_R>;
+			dmas = <&dmamux1 81 0x400 0x5>,
+			       <&dmamux1 82 0x400 0x1>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
@@ -596,6 +608,9 @@
 			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc USART6_K>;
 			resets = <&rcc USART6_R>;
+			dmas = <&dmamux1 71 0x400 0x5>,
+			       <&dmamux1 72 0x400 0x1>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
@@ -829,6 +844,9 @@
 			interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc USART1_K>;
 			resets = <&rcc USART1_R>;
+			dmas = <&dmamux1 41 0x400 0x5>,
+			       <&dmamux1 42 0x400 0x1>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
@@ -838,6 +856,9 @@
 			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc USART2_K>;
 			resets = <&rcc USART2_R>;
+			dmas = <&dmamux1 43 0x400 0x5>,
+			       <&dmamux1 44 0x400 0x1>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
