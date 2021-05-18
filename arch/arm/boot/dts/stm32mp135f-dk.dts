@@ -79,6 +79,19 @@
 			};
 		};
 	};
+
+	usb_phy_tuning: usb-phy-tuning {
+		st,current-boost = <1>;
+		st,hs-slew-ctrl;
+		st,hs-dc-level = <2>;
+		st,hs-rftime-reduction;
+		st,hs-current-trim = <11>;
+		st,hs-impedance-trim = <2>;
+		st,squelch-level = <1>;
+		st,hs-rx-gain-eq;
+		st,no-hs-ftime-ctrl;
+		st,no-lsfs-sc;
+	};
 };
 
 &adc_1 {
@@ -417,8 +430,10 @@
 
 &usbphyc_port0 {
 	phy-supply = <&scmi_vdd_usb>;
+	st,phy-tuning = <&usb_phy_tuning>;
 };
 
 &usbphyc_port1 {
 	phy-supply = <&scmi_vdd_usb>;
+	st,phy-tuning = <&usb_phy_tuning>;
 };
