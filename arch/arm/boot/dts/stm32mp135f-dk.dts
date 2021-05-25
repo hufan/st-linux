@@ -42,7 +42,7 @@
 		user-pa13 {
 			label = "User-PA13";
 			linux,code = <BTN_1>;
-			interrupts-extended = <&gpioa 13 IRQ_TYPE_EDGE_FALLING>;
+			gpios = <&gpioa 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			wakeup-source;
 		};
 	};
