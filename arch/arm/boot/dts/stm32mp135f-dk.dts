@@ -282,10 +282,6 @@
 		voltd-name = "v3v3_sw";
 		regulator-name = "v3v3_sw";
 	};
-	scmi_pwr_on_db: voltd-pwr_on_db {
-		voltd-name = "pwr_on_db";
-		regulator-name = "pwr_on_db";
-	};
 };
 
 &sdmmc1 {
