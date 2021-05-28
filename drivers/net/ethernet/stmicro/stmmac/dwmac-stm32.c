@@ -426,6 +426,8 @@ static int stm32_dwmac_probe(struct platform_device *pdev)
 err_clk_disable:
 	stm32_dwmac_clk_disable(dwmac);
 err_remove_config_dt:
+	dev_pm_clear_wake_irq(&pdev->dev);
+	device_set_wakeup_capable(&pdev->dev, false);
 	stmmac_remove_config_dt(pdev, plat_dat);
 
 	return ret;
