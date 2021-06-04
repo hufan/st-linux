@@ -24,6 +24,7 @@ struct ltdc_caps {
 	bool non_alpha_only_l1; /* non-native no-alpha formats on layer 1 */
 	int pad_max_freq_hz;	/* max frequency supported by pad */
 	int nb_irq;		/* number of hardware interrupts */
+	bool ycbcr_input;	/* ycbcr input convertor supported */
 	bool ycbcr_output;	/* ycbcr output convertor supported */
 };
 
