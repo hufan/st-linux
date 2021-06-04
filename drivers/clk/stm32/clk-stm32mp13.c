@@ -1169,7 +1169,7 @@ static const struct clock_config stm32mp13_clock_cfg[] = {
 			GATE_MCO2, MUX_MCO2, DIV_MCO2),
 
 	/* Debug clocks */
-	STM32_GATE(CK_DBG, "ck_sys_dbg", "ck_axi", CLK_IGNORE_UNUSED,
+	STM32_GATE(CK_DBG, "ck_sys_dbg", "ck_axi", CLK_IS_CRITICAL,
 		   GATE_DBGCK, SECF_NONE),
 
 	STM32_COMPOSITE_NOMUX(CK_TRACE, "ck_trace", "ck_axi", CLK_IGNORE_UNUSED,
