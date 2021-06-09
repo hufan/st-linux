@@ -309,7 +309,7 @@ static int stm32_dwmac_parse_data(struct stm32_dwmac *dwmac,
 	if (err)
 		dev_info(dev, "Warning sysconfig register mask not set\n");
 
-	return err;
+	return 0;
 }
 
 static int stm32mp1_parse_data(struct stm32_dwmac *dwmac,
