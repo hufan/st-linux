@@ -439,11 +439,13 @@
 		uart4: serial@40010000 {
 			compatible = "st,stm32h7-uart";
 			reg = <0x40010000 0x400>;
-			interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts-extended = <&exti 30 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc UART4_K>;
 			resets = <&rcc UART4_R>;
-			dmas = <&dmamux1 63 0x400 0x15>,
-			       <&dmamux1 64 0x400 0x11>;
+			wakeup-source;
+			power-domains = <&pd_core_ret>;
+			dmas = <&dmamux1 63 0x400 0x5>,
+			       <&dmamux1 64 0x400 0x1>;
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
