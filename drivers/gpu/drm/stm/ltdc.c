@@ -212,6 +212,9 @@
 #define YCM_FP		0x2		/* Full-Planar 420 */
 #define LxPCR_YCEN	BIT(3)		/* YCbCr-to-RGB Conversion Enable */
 
+#define LXRCR_IMR	BIT(0)		/* IMmediate Reload */
+#define LXRCR_VBR	BIT(1)		/* Vertical Blanking Reload */
+
 #define CLUT_SIZE	256
 
 #define CONSTA_MAX	0xFF		/* CONSTant Alpha MAX= 1.0 */
@@ -755,7 +758,8 @@ static void ltdc_crtc_atomic_enable(struct drm_crtc *crtc,
 	regmap_set_bits(ldev->regmap, LTDC_IER, IER_RRIE | IER_FUIE | IER_TERRIE);
 
 	/* Commit shadow registers = update planes at next vblank */
-	regmap_set_bits(ldev->regmap, LTDC_SRCR, SRCR_VBR);
+	if (!ldev->caps.plane_reg_shadow)
+		regmap_set_bits(ldev->regmap, LTDC_SRCR, SRCR_VBR);
 
 	drm_crtc_vblank_on(crtc);
 }
@@ -777,7 +781,8 @@ static void ltdc_crtc_atomic_disable(struct drm_crtc *crtc,
 	regmap_clear_bits(ldev->regmap, LTDC_IER, IER_RRIE | IER_FUIE | IER_TERRIE);
 
 	/* immediately commit disable of layers before switching off LTDC */
-	regmap_set_bits(ldev->regmap, LTDC_SRCR, SRCR_IMR);
+	if (!ldev->caps.plane_reg_shadow)
+		regmap_set_bits(ldev->regmap, LTDC_SRCR, SRCR_IMR);
 
 	pm_runtime_put_sync(ddev->dev);
 }
@@ -990,7 +995,8 @@ static void ltdc_crtc_atomic_flush(struct drm_crtc *crtc,
 	ltdc_crtc_update_clut(crtc);
 
 	/* Commit shadow registers = update planes at next vblank */
-	regmap_set_bits(ldev->regmap, LTDC_SRCR, SRCR_VBR);
+	if (!ldev->caps.plane_reg_shadow)
+		regmap_set_bits(ldev->regmap, LTDC_SRCR, SRCR_VBR);
 
 	if (event) {
 		crtc->state->event = NULL;
@@ -1334,6 +1340,10 @@ static void ltdc_plane_atomic_update(struct drm_plane *plane,
 	val |= LXCR_LEN;
 	regmap_write(ldev->regmap, LTDC_L1CR + lofs, val);
 
+	/* Commit shadow registers = update plane at next vblank */
+	if (ldev->caps.plane_reg_shadow)
+		regmap_set_bits(ldev->regmap, LTDC_L1RCR + lofs, LXRCR_VBR);
+
 	ldev->plane_fpsi[plane->index].counter++;
 
 	mutex_lock(&ldev->err_lock);
@@ -1360,6 +1370,10 @@ static void ltdc_plane_atomic_disable(struct drm_plane *plane,
 
 	/* disable layer */
 	regmap_clear_bits(ldev->regmap, LTDC_L1CR + lofs, LXCR_LEN);
+
+	/* Commit shadow registers = update plane at next vblank */
+	if (ldev->caps.plane_reg_shadow)
+		regmap_set_bits(ldev->regmap, LTDC_L1RCR + lofs, LXRCR_VBR);
 
 	DRM_DEBUG_DRIVER("CRTC:%d plane:%d\n",
 			 oldstate->crtc->base.id, plane->base.id);
@@ -1677,6 +1691,7 @@ static int ltdc_get_caps(struct drm_device *ddev)
 		ldev->caps.nb_irq = 2;
 		ldev->caps.ycbcr_input = false;
 		ldev->caps.ycbcr_output = false;
+		ldev->caps.plane_reg_shadow = false;
 		break;
 	case HWVER_20101:
 		ldev->caps.layer_ofs = LAY_OFS_0;
@@ -1690,6 +1705,7 @@ static int ltdc_get_caps(struct drm_device *ddev)
 		ldev->caps.nb_irq = 4;
 		ldev->caps.ycbcr_input = false;
 		ldev->caps.ycbcr_output = false;
+		ldev->caps.plane_reg_shadow = false;
 		break;
 	case HWVER_40100:
 		ldev->caps.layer_ofs = LAY_OFS_1;
@@ -1703,6 +1719,7 @@ static int ltdc_get_caps(struct drm_device *ddev)
 		ldev->caps.nb_irq = 2;
 		ldev->caps.ycbcr_input = true;
 		ldev->caps.ycbcr_output = true;
+		ldev->caps.plane_reg_shadow = true;
 		break;
 	default:
 		return -ENODEV;

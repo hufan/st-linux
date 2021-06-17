@@ -26,6 +26,7 @@ struct ltdc_caps {
 	int nb_irq;		/* number of hardware interrupts */
 	bool ycbcr_input;	/* ycbcr input convertor supported */
 	bool ycbcr_output;	/* ycbcr output convertor supported */
+	bool plane_reg_shadow; 	/* plane shadow registers ability */
 };
 
 #define LTDC_MAX_LAYER	4
