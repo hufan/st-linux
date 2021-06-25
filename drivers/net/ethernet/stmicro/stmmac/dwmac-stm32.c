@@ -308,7 +308,7 @@ static int stm32_dwmac_parse_data(struct stm32_dwmac *dwmac,
 	dwmac->mode_mask = SYSCFG_MP1_ETH_MASK;
 	err = of_property_read_u32_index(np, "st,syscon", 2, &dwmac->mode_mask);
 	if (err)
-		dev_info(dev, "Warning sysconfig register mask not set\n");
+		pr_debug("Warning sysconfig register mask not set\n");
 
 	return 0;
 }
