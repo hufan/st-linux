@@ -67,7 +67,7 @@
 /*  IP clocks */
 #define SYSCFG		40
 #define VREF		41
-#define TMPSENS		42
+#define DTS		42
 #define PMBCTRL		43
 #define HDP		44
 #define IWDG2		45
