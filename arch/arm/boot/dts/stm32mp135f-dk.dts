@@ -311,7 +311,7 @@
 		clock-names = "xclk";
 		VDDE-supply = <&scmi_v1v8_periph>;
 		VDDIN-supply = <&scmi_v1v8_periph>;
-		reset-gpios = <&mcp23017 8 (GPIO_ACTIVE_LOW | GPIO_PUSH_PULL)>;
+		reset-gpios = <&mcp23017 2 (GPIO_ACTIVE_LOW | GPIO_PUSH_PULL)>;
 
 		ports {
 			#address-cells = <1>;
@@ -346,6 +346,7 @@
 		clock-names = "xclk";
 		DOVDD-supply = <&scmi_v3v3_sw>;
 		status = "okay";
+		reset-gpios = <&mcp23017 3 (GPIO_ACTIVE_LOW | GPIO_PUSH_PULL)>;
 
 		port {
 			ov5640_0: endpoint {
