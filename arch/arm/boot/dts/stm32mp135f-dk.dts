@@ -185,7 +185,8 @@
 &eth1 {
 	status = "okay";
 	pinctrl-0 = <&eth1_rmii_pins_a>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&eth1_sleep_rmii_pins_a>;
+	pinctrl-names = "default", "sleep";
 	phy-mode = "rmii";
 	max-speed = <100>;
 	phy-handle = <&phy0_eth1>;
@@ -208,7 +209,8 @@
 &eth2 {
 	status = "okay";
 	pinctrl-0 = <&eth2_rmii_pins_a>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&eth2_sleep_rmii_pins_a>;
+	pinctrl-names = "default", "sleep";
 	phy-mode = "rmii";
 	max-speed = <100>;
 	phy-handle = <&phy0_eth2>;
