@@ -1064,6 +1064,8 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
 	/* Try overriding touchscreen parameters via device properties */
 	touchscreen_parse_properties(ts->input_dev, true, &ts->prop);
 
+	ts->max_touch_num = 1;//FIXME
+
 	if (!ts->prop.max_x || !ts->prop.max_y || !ts->max_touch_num) {
 		dev_err(&ts->client->dev,
 			"Invalid config (%d, %d, %d), using defaults\n",
