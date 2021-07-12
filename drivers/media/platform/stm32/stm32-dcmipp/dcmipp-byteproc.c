@@ -338,6 +338,17 @@ static int dcmipp_postproc_configure_scale_crop
 	return 0;
 }
 
+static void dcmipp_postproc_configure_framerate
+			(struct dcmipp_postproc_device *postproc)
+{
+	struct dcmipp_common_device *ent = to_dcmipp_common(postproc);
+
+	/* Frame skipping */
+	reg_clear(ent, DCMIPP_PXFCTCR(postproc->pipe_id),
+		  DCMIPP_P0FCTCR_FRATE_MASK);
+	reg_set(ent, DCMIPP_PXFCTCR(postproc->pipe_id), postproc->frate);
+}
+
 static int dcmipp_postproc_g_frame_interval(struct v4l2_subdev *sd,
 					    struct v4l2_subdev_frame_interval *fi)
 {
@@ -401,6 +412,8 @@ static int dcmipp_postproc_s_stream(struct v4l2_subdev *sd, int enable)
 	mutex_lock(&postproc->common.lock);
 
 	if (enable) {
+		dcmipp_postproc_configure_framerate(postproc);
+
 		ret = dcmipp_postproc_configure_scale_crop(postproc);
 		if (ret)
 			goto err;
