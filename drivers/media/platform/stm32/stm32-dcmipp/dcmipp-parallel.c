@@ -29,21 +29,18 @@
 static const struct dcmipp_pix_map dcmipp_par_sink_pix_map_list[] = {
 	{
 		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
-		.pixelformat = V4L2_PIX_FMT_RGB565,
-		.bpp = 2,
-		.prcr_format = DCMIPP_PRCR_FORMAT_RGB565,
 	},
 	{
 		.code = MEDIA_BUS_FMT_YUYV8_2X8,
-		.pixelformat = V4L2_PIX_FMT_YUYV,
-		.bpp = 2,
-		.prcr_format = DCMIPP_PRCR_FORMAT_YUV422,
+	},
+	{
+		.code = MEDIA_BUS_FMT_Y8_1X8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
 	},
 	{
 		.code = MEDIA_BUS_FMT_JPEG_1X8,
-		.pixelformat = V4L2_PIX_FMT_JPEG,
-		.bpp = 1,
-		.prcr_format = 0xff,
 	},
 };
 
@@ -52,7 +49,7 @@ static const struct dcmipp_pix_map dcmipp_par_src_pix_map_list[] = {
 		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
 		.pixelformat = V4L2_PIX_FMT_RGB565,
 		.bpp = 2,
-		.prcr_format = 0x22,
+		.prcr_format = DCMIPP_PRCR_FORMAT_RGB565,
 		.prcr_swapcycles = 1,
 	},
 	{
@@ -63,9 +60,22 @@ static const struct dcmipp_pix_map dcmipp_par_src_pix_map_list[] = {
 		.prcr_swapcycles = 1,
 	},
 	{
+		.code = MEDIA_BUS_FMT_Y8_1X8,
+		.pixelformat = V4L2_PIX_FMT_GREY,
+		.bpp = 1,
+		.prcr_format = DCMIPP_PRCR_FORMAT_G8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
+		.pixelformat = V4L2_PIX_FMT_SBGGR8,
+		.bpp = 1,
+		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
+	},
+	{
 		.code = MEDIA_BUS_FMT_JPEG_1X8,
 		.pixelformat = V4L2_PIX_FMT_JPEG,
-		.bpp = 2,
+		.bpp = 1,
+		.prcr_format = DCMIPP_PRCR_FORMAT_BYTE_STREAM,
 	},
 };
 
