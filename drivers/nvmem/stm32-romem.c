@@ -56,18 +56,19 @@ static int stm32_romem_read(void *context, unsigned int offset, void *buf,
 			    size_t bytes)
 {
 	struct stm32_romem_priv *priv = context;
+	struct device *dev = priv->cfg.dev;
 	u8 *buf8 = buf;
 	int i, ret;
 
-	ret = pm_runtime_resume_and_get(priv->cfg.dev);
+	ret = pm_runtime_resume_and_get(dev);
 	if (ret < 0)
 		return ret;
 
 	for (i = offset; i < offset + bytes; i++)
 		*buf8++ = readb_relaxed(priv->base + i);
 
-	pm_runtime_mark_last_busy(priv->cfg.dev);
-	pm_runtime_put_autosuspend(priv->cfg.dev);
+	pm_runtime_mark_last_busy(dev);
+	pm_runtime_put_autosuspend(dev);
 
 	return 0;
 }
@@ -99,7 +100,7 @@ static int stm32_bsec_read(void *context, unsigned int offset, void *buf,
 	u8 *buf8 = buf, *val8 = (u8 *)&val;
 	int i, j = 0, ret, skip_bytes, size;
 
-	ret = pm_runtime_resume_and_get(priv->cfg.dev);
+	ret = pm_runtime_resume_and_get(dev);
 	if (ret < 0)
 		return ret;
 
@@ -141,8 +142,8 @@ static int stm32_bsec_read(void *context, unsigned int offset, void *buf,
 	}
 
 end_read:
-	pm_runtime_mark_last_busy(priv->cfg.dev);
-	pm_runtime_put_autosuspend(priv->cfg.dev);
+	pm_runtime_mark_last_busy(dev);
+	pm_runtime_put_autosuspend(dev);
 
 	return ret;
 }
@@ -155,7 +156,7 @@ static int stm32_bsec_write(void *context, unsigned int offset, void *buf,
 	u32 *buf32 = buf;
 	int ret, i;
 
-	ret = pm_runtime_resume_and_get(priv->cfg.dev);
+	ret = pm_runtime_resume_and_get(dev);
 	if (ret < 0)
 		return ret;
 
@@ -178,8 +179,8 @@ static int stm32_bsec_write(void *context, unsigned int offset, void *buf,
 		dev_warn(dev, "Update of upper OTPs with ECC protection (word programming, only once)\n");
 
 end_write:
-	pm_runtime_mark_last_busy(priv->cfg.dev);
-	pm_runtime_put_autosuspend(priv->cfg.dev);
+	pm_runtime_mark_last_busy(dev);
+	pm_runtime_put_autosuspend(dev);
 
 	return ret;
 }
