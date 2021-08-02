@@ -716,9 +716,8 @@ static void dcmipp_cap_comp_unbind(struct device *comp, struct device *master,
 	struct dcmipp_cap_device *vcap = container_of(ved, struct dcmipp_cap_device,
 						    ved);
 
-	vb2_queue_release(&vcap->queue);
 	media_entity_cleanup(ved->ent);
-	video_unregister_device(&vcap->vdev);
+	vb2_video_unregister_device(&vcap->vdev);
 }
 
 static void dcmipp_buffer_done(struct dcmipp_cap_device *vcap,
@@ -958,13 +957,11 @@ static int dcmipp_cap_comp_bind(struct device *comp, struct device *master,
 	if (ret) {
 		dev_err(comp, "%s: video register failed (err=%d)\n",
 			vcap->vdev.name, ret);
-		goto err_release_queue;
+		goto err_clean_m_ent;
 	}
 
 	return 0;
 
-err_release_queue:
-	vb2_queue_release(q);
 err_clean_m_ent:
 	media_entity_cleanup(&vcap->vdev.entity);
 err_clean_pads:
