@@ -37,8 +37,6 @@
 }
 
 struct dcmipp_graph_entity {
-	struct v4l2_async_subdev asd;
-
 	struct device_node *remote_node;
 	struct v4l2_subdev *source;
 };
@@ -482,13 +480,12 @@ static int dcmipp_graph_parse(struct dcmipp_device *dcmipp, struct device_node *
 
 	/* Remote node to connect */
 	dcmipp->entity.remote_node = remote;
-	dcmipp->entity.asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
-	dcmipp->entity.asd.match.fwnode = of_fwnode_handle(remote);
 	return 0;
 }
 
 static int dcmipp_graph_init(struct dcmipp_device *dcmipp)
 {
+	struct v4l2_async_subdev *asd;
 	int ret;
 
 	/* Parse the graph to extract a list of subdevice DT nodes. */
@@ -500,11 +497,18 @@ static int dcmipp_graph_init(struct dcmipp_device *dcmipp)
 
 	v4l2_async_notifier_init(&dcmipp->notifier);
 
-	ret = v4l2_async_notifier_add_subdev(&dcmipp->notifier,
-					     &dcmipp->entity.asd);
+	asd = kzalloc(sizeof(*asd), GFP_KERNEL);
+	if (!asd)
+		return -ENOMEM;
+
+	asd->match_type = V4L2_ASYNC_MATCH_FWNODE;
+	asd->match.fwnode = of_fwnode_handle(dcmipp->entity.remote_node);
+
+	ret = v4l2_async_notifier_add_subdev(&dcmipp->notifier, asd);
 	if (ret) {
 		dev_err(dcmipp->dev, "Failed to add subdev notifier\n");
 		of_node_put(dcmipp->entity.remote_node);
+		kfree(asd);
 		return ret;
 	}
 
