@@ -21,6 +21,25 @@
 
 #define DCMIPP_PAR_DRV_NAME "dcmipp-parallel"
 
+#define DCMIPP_PRCR (0x104)
+#define DCMIPP_PRCR_FORMAT_SHIFT 16
+#define DCMIPP_PRCR_FORMAT_YUV422 0x1E
+#define DCMIPP_PRCR_FORMAT_RGB565 0x22
+#define DCMIPP_PRCR_FORMAT_RAW8 0x2A
+#define DCMIPP_PRCR_FORMAT_G8 0x4A
+#define DCMIPP_PRCR_FORMAT_BYTE_STREAM 0x5A
+#define DCMIPP_PRCR_PCKPOL BIT(5)
+#define DCMIPP_PRCR_HSPOL BIT(6)
+#define DCMIPP_PRCR_VSPOL BIT(7)
+#define DCMIPP_PRCR_ENABLE BIT(14)
+#define DCMIPP_PRCR_SWAPCYCLES BIT(25)
+#define DCMIPP_PRCR_SWAPBITS BIT(26)
+
+#define DCMIPP_PRSR_ERRF BIT(6)
+
+#define DCMIPP_PRIER (0x1F4)
+#define DCMIPP_PRIER_ERRIE BIT(6)
+
 #define IS_SINK(pad) (!(pad))
 #define IS_SRC(pad)  ((pad))
 
@@ -316,7 +335,7 @@ static int dcmipp_par_configure(struct dcmipp_par_device *par)
 
 	/* Set format */
 	vpix = __dcmipp_pix_map_by_code(par->mbus_format.code, 1);
-	val |= vpix->prcr_format << 16;
+	val |= vpix->prcr_format << DCMIPP_PRCR_FORMAT_SHIFT;
 
 	/* swap LSB vs MSB within one cycle */
 	if (vpix->prcr_swapbits)

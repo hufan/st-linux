@@ -36,6 +36,13 @@
 	.flags = link_flags,					\
 }
 
+#define DCMIPP_NUM_PIPES 1
+
+#define DCMIPP_CMHWCFGR (0x200)
+#define DCMIPP_P0HWCFGR (0x400)
+#define DCMIPP_PXHWCFGR(id) (DCMIPP_P0HWCFGR)
+#define DCMIPP_VERR (0xFF4)
+
 struct dcmipp_graph_entity {
 	struct device_node *remote_node;
 	struct v4l2_subdev *source;

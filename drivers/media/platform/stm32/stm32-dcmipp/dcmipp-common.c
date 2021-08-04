@@ -13,18 +13,6 @@
 
 #include "dcmipp-common.h"
 
-u32 _reg_read(void __iomem *base, u32 reg)
-{
-	return readl_relaxed(base + reg);
-}
-EXPORT_SYMBOL_GPL(_reg_read);
-
-void _reg_write(void __iomem *base, u32 reg, u32 val)
-{
-	writel_relaxed(val, base + reg);
-}
-EXPORT_SYMBOL_GPL(_reg_write);
-
 #define IS_SINK(sd, pad) ((sd)->entity.pads[(pad)].flags & MEDIA_PAD_FL_SINK)
 #define IS_SRC(sd, pad)  ((sd)->entity.pads[(pad)].flags & MEDIA_PAD_FL_SOURCE)
 #define PAD_STR(sd, pad) (IS_SRC((sd), (pad))) ? "src" : "sink"

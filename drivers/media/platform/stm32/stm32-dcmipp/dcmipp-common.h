@@ -17,8 +17,6 @@
 #include <media/v4l2-device.h>
 #include <media/v4l2-fwnode.h>
 
-#include "dcmipp-regs.h"
-
 #define DCMIPP_PDEV_NAME "dcmipp"
 
 /* DCMIPP-specific controls */
@@ -295,59 +293,34 @@ int dcmipp_link_validate(struct media_link *link);
 #define reg_clear(device, reg, mask) \
 	 (reg_clear_dbg((device)->dev, #reg, (device)->regs, (reg), (mask)))
 
-u32 _reg_read(void __iomem *base, u32 reg);
-void _reg_write(void __iomem *base, u32 reg, u32 val);
-
-static inline const char *reg_stringify(u32 reg)
-{
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(regs_to_name); i++) {
-		if (regs_to_name[i].offset == reg)
-			return regs_to_name[i].name;
-	}
-
-	return "?";
-}
-
 static inline u32 reg_read_dbg(struct device *dev, const char *regname,
 			       void __iomem *base, u32 reg)
 {
-	u32 val = _reg_read(base, reg);
+	u32 val = readl_relaxed(base + reg);
 
-	dev_dbg(dev, "RD  %s %#10.8x\n", reg_stringify(reg), val);
+	dev_dbg(dev, "RD  %s %#10.8x\n", regname, val);
 	return val;
 }
 
 static inline void reg_write_dbg(struct device *dev, const char *regname,
 				 void __iomem *base, u32 reg, u32 val)
 {
-	dev_dbg(dev, "WR  %s %#10.8x\n", reg_stringify(reg), val);
-	_reg_write(base, reg, val);
-}
-
-static inline void _reg_set(void __iomem *base, u32 reg, u32 mask)
-{
-	_reg_write(base, reg, _reg_read(base, reg) | mask);
+	dev_dbg(dev, "WR  %s %#10.8x\n", regname, val);
+	writel_relaxed(val, base + reg);
 }
 
 static inline void reg_set_dbg(struct device *dev, const char *regname,
 			       void __iomem *base, u32 reg, u32 mask)
 {
-	dev_dbg(dev, "SET %s %#10.8x\n", reg_stringify(reg), mask);
-	reg_write_dbg(dev, regname, base, reg, _reg_read(base, reg) | mask);
-}
-
-static inline void _reg_clear(void __iomem *base, u32 reg, u32 mask)
-{
-	_reg_write(base, reg, _reg_read(base, reg) & ~mask);
+	dev_dbg(dev, "SET %s %#10.8x\n", regname, mask);
+	reg_write_dbg(dev, regname, base, reg, readl_relaxed(base + reg) | mask);
 }
 
 static inline void reg_clear_dbg(struct device *dev, const char *regname,
 				 void __iomem *base, u32 reg, u32 mask)
 {
-	dev_dbg(dev, "CLR %s %#10.8x\n", reg_stringify(reg), mask);
-	reg_write_dbg(dev, regname, base, reg, _reg_read(base, reg) & ~mask);
+	dev_dbg(dev, "CLR %s %#10.8x\n", regname, mask);
+	reg_write_dbg(dev, regname, base, reg, readl_relaxed(base + reg) & ~mask);
 }
 
 #endif

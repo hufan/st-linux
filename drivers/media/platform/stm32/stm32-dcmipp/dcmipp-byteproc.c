@@ -25,6 +25,21 @@
 #define DCMIPP_FMT_WIDTH_DEFAULT  640
 #define DCMIPP_FMT_HEIGHT_DEFAULT 480
 
+#define DCMIPP_P0FCTCR (0x500)
+#define DCMIPP_P0FCTCR_FRATE_MASK GENMASK(1, 0)
+#define DCMIPP_P0SCSTR (0x504)
+#define DCMIPP_P0SCSTR_HSTART_SHIFT	0
+#define DCMIPP_P0SCSTR_VSTART_SHIFT	16
+#define DCMIPP_P0SCSZR (0x508)
+#define DCMIPP_P0SCSZR_ENABLE BIT(31)
+#define DCMIPP_P0SCSZR_HSIZE_SHIFT	0
+#define DCMIPP_P0SCSZR_VSIZE_SHIFT	16
+#define DCMIPP_P0PPCR (0x5C0)
+#define DCMIPP_P0PPCR_BSM_2_4 0x3
+#define DCMIPP_P0PPCR_BSM_MASK GENMASK(8, 7)
+#define DCMIPP_P0PPCR_BSM_SHIFT 0x7
+#define DCMIPP_P0PPCR_LSM BIT(10)
+
 #define IS_SINK(sd, pad) ((sd)->entity.pads[(pad)].flags & MEDIA_PAD_FL_SINK)
 #define IS_SRC(sd, pad)  ((sd)->entity.pads[(pad)].flags & MEDIA_PAD_FL_SOURCE)
 #define PAD_STR(sd, pad) (IS_SRC((sd), (pad))) ? "src" : "sink"
@@ -295,7 +310,7 @@ static int dcmipp_postproc_configure_scale_crop
 	hprediv = postproc->common.sink_fmt.width /
 		  postproc->common.src_fmt.width;
 	if (hprediv == 2)
-		val |= DCMIPP_P0PPCR_BSM_2_4 << 7;/* 2 bytes out of 4 */
+		val |= DCMIPP_P0PPCR_BSM_2_4 << DCMIPP_P0PPCR_BSM_SHIFT;
 
 	vprediv = postproc->common.sink_fmt.height /
 		  postproc->common.src_fmt.height;
@@ -329,10 +344,12 @@ static int dcmipp_postproc_configure_scale_crop
 
 		/* expressed in 32-bits words on X axis, lines on Y axis */
 		reg_write(ent, DCMIPP_P0SCSTR,
-			  ((crop.left * vpix->bpp) / 4) | crop.top << 16);
+			  (((crop.left * vpix->bpp) / 4) << DCMIPP_P0SCSTR_HSTART_SHIFT) |
+			  (crop.top << DCMIPP_P0SCSTR_VSTART_SHIFT));
 		reg_write(ent, DCMIPP_P0SCSZR,
 			  DCMIPP_P0SCSZR_ENABLE |
-			  ((crop.width * vpix->bpp) / 4) | crop.height << 16);
+			  (((crop.width * vpix->bpp) / 4) << DCMIPP_P0SCSZR_HSIZE_SHIFT) |
+			  (crop.height << DCMIPP_P0SCSZR_VSIZE_SHIFT));
 	}
 
 	return 0;
@@ -344,9 +361,8 @@ static void dcmipp_postproc_configure_framerate
 	struct dcmipp_common_device *ent = to_dcmipp_common(postproc);
 
 	/* Frame skipping */
-	reg_clear(ent, DCMIPP_PXFCTCR(postproc->pipe_id),
-		  DCMIPP_P0FCTCR_FRATE_MASK);
-	reg_set(ent, DCMIPP_PXFCTCR(postproc->pipe_id), postproc->frate);
+	reg_clear(ent, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_FRATE_MASK);
+	reg_set(ent, DCMIPP_P0FCTCR, postproc->frate);
 }
 
 static int dcmipp_postproc_g_frame_interval(struct v4l2_subdev *sd,

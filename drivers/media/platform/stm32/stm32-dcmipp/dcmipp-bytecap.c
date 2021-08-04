@@ -25,6 +25,35 @@
 #define STOP_TIMEOUT_US 1000
 #define POLL_INTERVAL_US  50
 
+#define DCMIPP_PRSR (0x1F8)
+#define DCMIPP_CMIER (0x3F0)
+#define DCMIPP_CMIER_P0FRAMEIE BIT(9)
+#define DCMIPP_CMIER_P0VSYNCIE BIT(10)
+#define DCMIPP_CMIER_P0LIMITIE BIT(14)
+#define DCMIPP_CMIER_P0OVRIE BIT(15)
+#define DCMIPP_CMIER_P0ALL (DCMIPP_CMIER_P0VSYNCIE |\
+			    DCMIPP_CMIER_P0FRAMEIE |\
+			    DCMIPP_CMIER_P0LIMITIE |\
+			    DCMIPP_CMIER_P0OVRIE)
+#define DCMIPP_CMSR1 (0x3F4)
+#define DCMIPP_CMSR2 (0x3F8)
+#define DCMIPP_CMSR2_P0FRAMEF BIT(9)
+#define DCMIPP_CMSR2_P0VSYNCF BIT(10)
+#define DCMIPP_CMSR2_P0OVRF BIT(15)
+#define DCMIPP_CMFCR (0x3FC)
+#define DCMIPP_P0FSCR (0x404)
+#define DCMIPP_P0FSCR_PIPEN BIT(31)
+#define DCMIPP_P0FCTCR (0x500)
+#define DCMIPP_P0FCTCR_CPTMODE BIT(2)
+#define DCMIPP_P0FCTCR_CPTREQ BIT(3)
+#define DCMIPP_P0DCCNTR (0x5B0)
+#define DCMIPP_P0DCLMTR (0x5B4)
+#define DCMIPP_P0DCLMTR_ENABLE BIT(31)
+#define DCMIPP_P0DCLMTR_LIMIT_MASK GENMASK(23, 0)
+#define DCMIPP_P0PPM0AR1 (0x5C4)
+#define DCMIPP_P0SR (0x5F8)
+#define DCMIPP_P0SR_CPTACT BIT(23)
+
 static const struct dcmipp_pix_map dcmipp_capture_pix_map_list[] = {
 	{
 		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
@@ -433,14 +462,14 @@ static int dcmipp_start_capture(struct dcmipp_cap_device *vcap,
 	 * Set buffer address
 	 * This register is taken into account immediately
 	 */
-	reg_write(vcap, DCMIPP_PXPPM0AR1(vcap->pipe_id), buf->paddr);
+	reg_write(vcap, DCMIPP_P0PPM0AR1, buf->paddr);
 
 	/* Set buffer size */
 	reg_write(vcap, DCMIPP_P0DCLMTR, DCMIPP_P0DCLMTR_ENABLE |
 		  ((buf->size / 4) & DCMIPP_P0DCLMTR_LIMIT_MASK));
 
 	/* Capture request */
-	reg_set(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTREQ);
+	reg_set(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 
 	return 0;
 }
@@ -475,14 +504,14 @@ static int dcmipp_cap_start_streaming(struct vb2_queue *vq, unsigned int count)
 		goto err_media_pipeline_stop;
 
 	/* Enable interruptions */
-	vcap->cmier |= DCMIPP_CMIER_PXALL(vcap->pipe_id);
+	vcap->cmier |= DCMIPP_CMIER_P0ALL;
 	reg_write(vcap, DCMIPP_CMIER, vcap->cmier);
 
 	/* Snapshot mode */
-	reg_set(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTMODE);
+	reg_set(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTMODE);
 
 	/* Enable pipe at the end of programming */
-	reg_set(vcap, DCMIPP_PXFSCR(vcap->pipe_id), DCMIPP_P0FSCR_PIPEN);
+	reg_set(vcap, DCMIPP_P0FSCR, DCMIPP_P0FSCR_PIPEN);
 
 	/*
 	 * Start capture if at least one buffer has been queued,
@@ -532,9 +561,9 @@ static void dcmipp_dump_status(struct dcmipp_cap_device *vcap)
 
 	dev_dbg(dev, "[DCMIPP_PRSR]  =%#10.8x\n", reg_read(vcap, DCMIPP_PRSR));
 	dev_dbg(dev, "[DCMIPP_P%dSR] =%#10.8x\n", vcap->pipe_id,
-		reg_read(vcap, DCMIPP_PXSR(vcap->pipe_id)));
-	dev_dbg(dev, "[DCMIPP_P%dDCCNTR]=%#10.8x\n", vcap->pipe_id,
-		reg_read(vcap, DCMIPP_PXDCCNTR(vcap->pipe_id)));
+		reg_read(vcap, DCMIPP_P0SR));
+	dev_dbg(dev, "[DCMIPP_P0DCCNTR]=%#10.8x\n",
+		reg_read(vcap, DCMIPP_P0DCCNTR));
 	dev_dbg(dev, "[DCMIPP_CMSR1] =%#10.8x\n", reg_read(vcap, DCMIPP_CMSR1));
 	dev_dbg(dev, "[DCMIPP_CMSR2] =%#10.8x\n", reg_read(vcap, DCMIPP_CMSR2));
 }
@@ -560,13 +589,13 @@ static void dcmipp_cap_stop_streaming(struct vb2_queue *vq)
 	reg_clear(vcap, DCMIPP_CMIER, vcap->cmier);
 
 	/* Stop capture */
-	reg_clear(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTREQ);
+	reg_clear(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 
 	timeleft = STOP_TIMEOUT_US / POLL_INTERVAL_US;
 	while (timeleft) {
 		u32 val;
 
-		val = reg_read(vcap, DCMIPP_PXSR(vcap->pipe_id));
+		val = reg_read(vcap, DCMIPP_P0SR);
 		if (!(val & DCMIPP_P0SR_CPTACT))
 			break;
 
@@ -577,7 +606,7 @@ static void dcmipp_cap_stop_streaming(struct vb2_queue *vq)
 		dev_warn(vcap->dev, "Timeout when stopping\n");
 
 	/* Disable pipe */
-	reg_clear(vcap, DCMIPP_PXFSCR(vcap->pipe_id), DCMIPP_P0FSCR_PIPEN);
+	reg_clear(vcap, DCMIPP_P0FSCR, DCMIPP_P0FSCR_PIPEN);
 
 	/* Return all queued buffers to vb2 in ERROR state */
 	list_for_each_entry_safe(buf, node, &vcap->buffers, list) {
@@ -793,10 +822,10 @@ static void dcmipp_cap_prepare_next_frame(struct dcmipp_cap_device *vcap)
 	 * This register is shadowed and will be taken into
 	 * account on next VSYNC (start of next frame)
 	 */
-	reg_write(vcap, DCMIPP_PXPPM0AR1(vcap->pipe_id), buf->paddr);
+	reg_write(vcap, DCMIPP_P0PPM0AR1, buf->paddr);
 
 	/* Capture request */
-	reg_set(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTREQ);
+	reg_set(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 }
 
 /* irqlock must be held */
@@ -835,9 +864,9 @@ static irqreturn_t dcmipp_cap_irq_thread(int irq, void *arg)
 
 	spin_lock_irq(&vcap->irqlock);
 
-	cmsr2_pxovrf = DCMIPP_CMSR2_PXOVRF(vcap->pipe_id);
-	cmsr2_pxvsyncf = DCMIPP_CMSR2_PXVSYNCF(vcap->pipe_id);
-	cmsr2_pxframef = DCMIPP_CMSR2_PXFRAMEF(vcap->pipe_id);
+	cmsr2_pxovrf = DCMIPP_CMSR2_P0OVRF;
+	cmsr2_pxvsyncf = DCMIPP_CMSR2_P0VSYNCF;
+	cmsr2_pxframef = DCMIPP_CMSR2_P0FRAMEF;
 
 	if (vcap->cmsr2 & cmsr2_pxovrf) {
 		vcap->overrun_count++;
@@ -865,7 +894,7 @@ static irqreturn_t dcmipp_cap_irq_thread(int irq, void *arg)
 		vcap->frame_count++;
 
 		/* Read captured buffer size */
-		bytesused = _reg_read(vcap->regs, DCMIPP_P0DCCNTR);
+		bytesused = reg_read(vcap, DCMIPP_P0DCCNTR);
 		dcmipp_cap_process_frame(vcap, bytesused);
 	}
 
@@ -883,13 +912,13 @@ static irqreturn_t dcmipp_cap_irq_callback(int irq, void *arg)
 
 	spin_lock_irq(&vcap->irqlock);
 
-	vcap->cmsr2 = _reg_read(vcap->regs, DCMIPP_CMSR2);
+	vcap->cmsr2 = reg_read(vcap, DCMIPP_CMSR2);
 	vcap->cmsr2 = vcap->cmsr2 & vcap->cmier;
 
 	vcap->it_count++;
 
 	/* Clear interrupt */
-	_reg_write(vcap->regs, DCMIPP_CMFCR, vcap->cmsr2);
+	reg_write(vcap, DCMIPP_CMFCR, vcap->cmsr2);
 
 	spin_unlock_irq(&vcap->irqlock);
 	return IRQ_WAKE_THREAD;
