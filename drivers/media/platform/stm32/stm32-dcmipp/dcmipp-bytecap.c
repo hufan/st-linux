@@ -15,6 +15,7 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <media/v4l2-ioctl.h>
+#include <media/v4l2-mc.h>
 #include <media/videobuf2-core.h>
 #include <media/videobuf2-dma-contig.h>
 
@@ -366,10 +367,51 @@ static int dcmipp_cap_enum_framesizes(struct file *file, void *fh,
 	return 0;
 }
 
+/* TODO - based on the explanation text, should also use v4l2_pipeline_link_notify */
+static int dcmipp_cap_open(struct file *file)
+{
+	struct dcmipp_cap_device *vcap = video_drvdata(file);
+	int ret;
+
+	ret = mutex_lock_interruptible(&vcap->lock);
+	if (ret)
+		return ret;
+
+	ret = v4l2_fh_open(file);
+	if (ret)
+		goto err_unlock;
+
+	ret = v4l2_pipeline_pm_get(&vcap->vdev.entity);
+	if (ret)
+		goto err_close;
+
+	mutex_unlock(&vcap->lock);
+
+	return 0;
+
+err_close:
+	v4l2_fh_release(file);
+err_unlock:
+	mutex_unlock(&vcap->lock);
+
+	return ret;
+}
+
+static int dcmipp_cap_close(struct file *file)
+{
+	struct dcmipp_cap_device *vcap = video_drvdata(file);
+
+	vb2_fop_release(file);
+
+	v4l2_pipeline_pm_put(&vcap->vdev.entity);
+
+	return 0;
+}
+
 static const struct v4l2_file_operations dcmipp_cap_fops = {
 	.owner		= THIS_MODULE,
-	.open		= v4l2_fh_open,
-	.release	= vb2_fop_release,
+	.open		= dcmipp_cap_open,
+	.release	= dcmipp_cap_close,
 	.read           = vb2_fop_read,
 	.poll		= vb2_fop_poll,
 	.unlocked_ioctl = video_ioctl2,
@@ -416,9 +458,6 @@ static int dcmipp_pipeline_s_stream(struct dcmipp_cap_device *vcap, int state)
 		entity = pad->entity;
 		subdev = media_entity_to_v4l2_subdev(entity);
 
-		if (state)
-			v4l2_subdev_call(subdev, core, s_power, state);
-
 		ret = v4l2_subdev_call(subdev, video, s_stream, state);
 		if (ret < 0 && ret != -ENOIOCTLCMD) {
 			dev_err(vcap->dev, "%s: \"%s\" failed to %s streaming (%d)\n",
@@ -430,9 +469,6 @@ static int dcmipp_pipeline_s_stream(struct dcmipp_cap_device *vcap, int state)
 
 			return ret;
 		}
-
-		if (!state)
-			v4l2_subdev_call(subdev, core, s_power, state);
 
 		dev_dbg(vcap->dev, "\"%s\" is %s\n",
 			subdev->name, state ? "started" : "stopped");
