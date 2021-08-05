@@ -60,6 +60,7 @@ static const struct dcmipp_pix_map dcmipp_par_src_pix_map_list[] = {
 		.pixelformat = V4L2_PIX_FMT_YUYV,
 		.bpp = 2,
 		.prcr_format = DCMIPP_PRCR_FORMAT_YUV422,
+		.prcr_swapcycles = 1,
 	},
 	{
 		.code = MEDIA_BUS_FMT_JPEG_1X8,

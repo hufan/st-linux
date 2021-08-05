@@ -31,7 +31,7 @@ static const struct dcmipp_pix_map dcmipp_capture_pix_map_list[] = {
 		.pixelformat = V4L2_PIX_FMT_RGB565,
 	},
 	{
-		.code = MEDIA_BUS_FMT_YUYV8_1X16,
+		.code = MEDIA_BUS_FMT_YUYV8_2X8,
 		.pixelformat = V4L2_PIX_FMT_YUYV,
 	},
 	{
