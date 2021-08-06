@@ -40,14 +40,73 @@
 #define DCMIPP_P0PPCR_BSM_SHIFT 0x7
 #define DCMIPP_P0PPCR_LSM BIT(10)
 
-#define IS_SINK(sd, pad) ((sd)->entity.pads[(pad)].flags & MEDIA_PAD_FL_SINK)
-#define IS_SRC(sd, pad)  ((sd)->entity.pads[(pad)].flags & MEDIA_PAD_FL_SOURCE)
-#define PAD_STR(sd, pad) (IS_SRC((sd), (pad))) ? "src" : "sink"
+#define IS_SINK(pad) (!(pad))
+#define IS_SRC(pad)  ((pad))
+#define PAD_STR(pad) (IS_SRC((pad))) ? "src" : "sink"
 
-#define to_dcmipp_common(a)	((struct dcmipp_common_device *)(&((a)->common)))
+#define POSTPROC_MEDIA_BUS_FMT_DEFAULT MEDIA_BUS_FMT_RGB565_2X8_LE
+
+struct dcmipp_postproc_pix_map {
+	unsigned int code;
+	unsigned int bpp;
+};
+
+#define PIXMAP_MBUS_BPP(mbus, byteperpixel)	\
+		{						\
+			.code = MEDIA_BUS_FMT_##mbus,		\
+			.bpp = byteperpixel,	\
+		}
+static const struct dcmipp_postproc_pix_map dcmipp_postproc_pix_map_list[] = {
+	PIXMAP_MBUS_BPP(RGB565_2X8_LE, 2),
+	PIXMAP_MBUS_BPP(YUYV8_2X8, 2),
+	PIXMAP_MBUS_BPP(YVYU8_2X8, 2),
+	PIXMAP_MBUS_BPP(UYVY8_2X8, 2),
+	PIXMAP_MBUS_BPP(VYUY8_2X8, 2),
+	PIXMAP_MBUS_BPP(Y8_1X8, 1),
+	PIXMAP_MBUS_BPP(SBGGR8_1X8, 1),
+	PIXMAP_MBUS_BPP(SGBRG8_1X8, 1),
+	PIXMAP_MBUS_BPP(SGRBG8_1X8, 1),
+	PIXMAP_MBUS_BPP(SRGGB8_1X8, 1),
+	PIXMAP_MBUS_BPP(JPEG_1X8, 1),
+};
+
+static const struct dcmipp_postproc_pix_map *dcmipp_postproc_pix_map_by_index(unsigned int i)
+{
+	const struct dcmipp_postproc_pix_map *l = dcmipp_postproc_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_postproc_pix_map_list);
+
+	if (i >= size)
+		return NULL;
+
+	return &l[i];
+}
+
+static const struct dcmipp_postproc_pix_map *dcmipp_postproc_pix_map_by_code(u32 code)
+{
+	const struct dcmipp_postproc_pix_map *l = dcmipp_postproc_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_postproc_pix_map_list);
+	unsigned int i;
+
+	for (i = 0; i < size; i++) {
+		if (l[i].code == code)
+			return &l[i];
+	}
+
+	return NULL;
+}
 
 struct dcmipp_postproc_device {
-	struct dcmipp_common_device common;
+	struct dcmipp_ent_device ved;
+	struct v4l2_subdev sd;
+	struct device *dev;
+	struct v4l2_mbus_framefmt sink_fmt;
+	struct v4l2_mbus_framefmt src_fmt;
+	bool streaming;
+	/* Protect this data structure */
+	struct mutex lock;
+
+	void __iomem *regs;
+
 	struct v4l2_fract sink_interval;
 	unsigned int frate;
 	u32 src_code;
@@ -58,7 +117,7 @@ struct dcmipp_postproc_device {
 static const struct v4l2_mbus_framefmt fmt_default = {
 	.width = DCMIPP_FMT_WIDTH_DEFAULT,
 	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
-	.code = MEDIA_BUS_FMT_SBGGR8_1X8,
+	.code = POSTPROC_MEDIA_BUS_FMT_DEFAULT,
 	.field = V4L2_FIELD_NONE,
 	.colorspace = V4L2_COLORSPACE_DEFAULT,
 };
@@ -116,14 +175,12 @@ static void dcmipp_postproc_adjust_src_fmt(struct v4l2_mbus_framefmt *src_fmt,
 		src_fmt->height = sink_fmt->height;
 }
 
-static void dcmipp_postproc_adjust_fmt(struct v4l2_mbus_framefmt *fmt, u32 type,
-				       unsigned int pipe_id)
+static void dcmipp_postproc_adjust_fmt(struct v4l2_mbus_framefmt *fmt, u32 pad)
 {
-	const struct dcmipp_pix_map *vpix;
+	const struct dcmipp_postproc_pix_map *vpix;
 
 	/* Only accept code in the pix map table */
-	vpix = dcmipp_pix_map_by_code(fmt->code,
-				      STAGE(pipe_id, DCMIPP_POSTPROC, type));
+	vpix = dcmipp_postproc_pix_map_by_code(fmt->code);
 	if (!vpix)
 		fmt->code = fmt_default.code;
 
@@ -138,6 +195,79 @@ static void dcmipp_postproc_adjust_fmt(struct v4l2_mbus_framefmt *fmt, u32 type,
 	dcmipp_colorimetry_clamp(fmt);
 }
 
+static int dcmipp_postproc_init_cfg(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_pad_config *cfg)
+{
+	unsigned int i;
+
+	for (i = 0; i < sd->entity.num_pads; i++) {
+		struct v4l2_mbus_framefmt *mf;
+
+		mf = v4l2_subdev_get_try_format(sd, cfg, i);
+		*mf = fmt_default;
+	}
+
+	return 0;
+}
+
+static int dcmipp_postproc_enum_mbus_code(struct v4l2_subdev *sd,
+					  struct v4l2_subdev_pad_config *cfg,
+					  struct v4l2_subdev_mbus_code_enum *code)
+{
+	const struct dcmipp_postproc_pix_map *vpix;
+
+	vpix = dcmipp_postproc_pix_map_by_index(code->index);
+	if (!vpix)
+		return -EINVAL;
+
+	code->code = vpix->code;
+
+	return 0;
+}
+
+static int dcmipp_postproc_enum_frame_size(struct v4l2_subdev *sd,
+					   struct v4l2_subdev_pad_config *cfg,
+					   struct v4l2_subdev_frame_size_enum *fse)
+{
+	const struct dcmipp_postproc_pix_map *vpix;
+
+	if (fse->index)
+		return -EINVAL;
+
+	/* Only accept code in the pix map table */
+	vpix = dcmipp_postproc_pix_map_by_code(fse->code);
+	if (!vpix)
+		return -EINVAL;
+
+	fse->min_width = DCMIPP_FRAME_MIN_WIDTH;
+	fse->max_width = DCMIPP_FRAME_MAX_WIDTH;
+	fse->min_height = DCMIPP_FRAME_MIN_HEIGHT;
+	fse->max_height = DCMIPP_FRAME_MAX_HEIGHT;
+
+	return 0;
+}
+
+static int dcmipp_postproc_get_fmt(struct v4l2_subdev *sd,
+		   struct v4l2_subdev_pad_config *cfg,
+		   struct v4l2_subdev_format *fmt)
+{
+	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+
+	mutex_lock(&postproc->lock);
+
+	if (IS_SINK(fmt->pad))
+		fmt->format = fmt->which == V4L2_SUBDEV_FORMAT_TRY ?
+			      *v4l2_subdev_get_try_format(sd, cfg, 0) :
+			      postproc->sink_fmt;
+	else
+		fmt->format = fmt->which == V4L2_SUBDEV_FORMAT_TRY ?
+			      *v4l2_subdev_get_try_format(sd, cfg, 0) :
+			      postproc->src_fmt;
+
+	mutex_unlock(&postproc->lock);
+
+	return 0;
+}
 static int dcmipp_postproc_set_fmt(struct v4l2_subdev *sd,
 				   struct v4l2_subdev_pad_config *cfg,
 				   struct v4l2_subdev_format *fmt)
@@ -145,39 +275,33 @@ static int dcmipp_postproc_set_fmt(struct v4l2_subdev *sd,
 	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
 	struct v4l2_mbus_framefmt *pad_fmt;
 	int ret = 0;
-	unsigned int type;
 
-	mutex_lock(&postproc->common.lock);
+	mutex_lock(&postproc->lock);
 
 	if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		if (postproc->common.streaming) {
+		if (postproc->streaming) {
 			ret = -EBUSY;
 			goto out;
 		}
 
-		if (IS_SINK(sd, fmt->pad))
-			pad_fmt = &postproc->common.sink_fmt;
+		if (IS_SINK(fmt->pad))
+			pad_fmt = &postproc->sink_fmt;
 		else
-			pad_fmt = &postproc->common.src_fmt;
+			pad_fmt = &postproc->src_fmt;
 
 	} else {
 		pad_fmt = v4l2_subdev_get_try_format(sd, cfg, 0);
 	}
 
-	if (IS_SINK(sd, fmt->pad))
-		type = INPUT;
-	else
-		type = OUTPUT;
+	dcmipp_postproc_adjust_fmt(&fmt->format, fmt->pad);
 
-	dcmipp_postproc_adjust_fmt(&fmt->format, type, postproc->common.pipe_id);
-
-	if (IS_SRC(sd, fmt->pad))
+	if (IS_SRC(fmt->pad))
 		dcmipp_postproc_adjust_src_fmt(&fmt->format,
-					       &postproc->common.sink_fmt);
+					       &postproc->sink_fmt);
 
-	dev_dbg(postproc->common.dev, "%s: %s format update: old:%dx%d (0x%x, %d, %d, %d, %d) new:%dx%d (0x%x, %d, %d, %d, %d)\n",
-		postproc->common.sd.name,
-		PAD_STR(sd, fmt->pad),
+	dev_dbg(postproc->dev, "%s: %s format update: old:%dx%d (0x%x, %d, %d, %d, %d) new:%dx%d (0x%x, %d, %d, %d, %d)\n",
+		postproc->sd.name,
+		PAD_STR(fmt->pad),
 		/* old */
 		pad_fmt->width, pad_fmt->height, pad_fmt->code,
 		pad_fmt->colorspace, pad_fmt->quantization,
@@ -190,7 +314,7 @@ static int dcmipp_postproc_set_fmt(struct v4l2_subdev *sd,
 	*pad_fmt = fmt->format;
 
 out:
-	mutex_unlock(&postproc->common.lock);
+	mutex_unlock(&postproc->lock);
 
 	return ret;
 }
@@ -203,11 +327,11 @@ static int dcmipp_postproc_get_selection(struct v4l2_subdev *sd,
 	struct v4l2_mbus_framefmt *sink_fmt;
 	struct v4l2_rect *crop;
 
-	if (IS_SINK(sd, s->pad))
+	if (IS_SINK(s->pad))
 		return -EINVAL;
 
 	if (s->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		sink_fmt = &postproc->common.sink_fmt;
+		sink_fmt = &postproc->sink_fmt;
 		crop = &postproc->crop;
 	} else {
 		sink_fmt = v4l2_subdev_get_try_format(sd, cfg, 0);
@@ -239,11 +363,11 @@ static int dcmipp_postproc_set_selection(struct v4l2_subdev *sd,
 	bool _do_crop;
 	bool *do_crop;
 
-	if (IS_SINK(sd, s->pad))
+	if (IS_SINK(s->pad))
 		return -EINVAL;
 
 	if (s->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		sink_fmt = &postproc->common.sink_fmt;
+		sink_fmt = &postproc->sink_fmt;
 		crop = &postproc->crop;
 		do_crop = &postproc->do_crop;
 	} else {
@@ -259,7 +383,7 @@ static int dcmipp_postproc_set_selection(struct v4l2_subdev *sd,
 		*crop = s->r;
 		*do_crop = true;
 
-		dev_dbg(postproc->common.dev, "s_selection: crop %ux%u@(%u,%u)\n",
+		dev_dbg(postproc->dev, "s_selection: crop %ux%u@(%u,%u)\n",
 			crop->width, crop->height, crop->left, crop->top);
 		break;
 	default:
@@ -270,10 +394,10 @@ static int dcmipp_postproc_set_selection(struct v4l2_subdev *sd,
 }
 
 static const struct v4l2_subdev_pad_ops dcmipp_postproc_pad_ops = {
-	.init_cfg		= dcmipp_init_cfg,
-	.enum_mbus_code		= dcmipp_enum_mbus_code,
-	.enum_frame_size	= dcmipp_enum_frame_size,
-	.get_fmt		= dcmipp_get_fmt,
+	.init_cfg		= dcmipp_postproc_init_cfg,
+	.enum_mbus_code		= dcmipp_postproc_enum_mbus_code,
+	.enum_frame_size	= dcmipp_postproc_enum_frame_size,
+	.get_fmt		= dcmipp_postproc_get_fmt,
 	.set_fmt		= dcmipp_postproc_set_fmt,
 	.get_selection		= dcmipp_postproc_get_selection,
 	.set_selection		= dcmipp_postproc_set_selection,
@@ -282,53 +406,50 @@ static const struct v4l2_subdev_pad_ops dcmipp_postproc_pad_ops = {
 static int dcmipp_postproc_configure_scale_crop
 			(struct dcmipp_postproc_device *postproc)
 {
-	struct dcmipp_common_device *ent = to_dcmipp_common(postproc);
-	const struct dcmipp_pix_map *vpix;
+	const struct dcmipp_postproc_pix_map *vpix;
 	u32 hprediv, vprediv;
 	struct v4l2_rect crop;
 	bool do_crop = false;
 	u32 val = 0;
 
-	/* find bpp from format */
-	vpix = dcmipp_pix_map_by_code(ent->src_fmt.code,
-				      STAGE(ent->pipe_id,
-					    DCMIPP_POSTPROC, OUTPUT));
+	/* find output format bpp */
+	vpix = dcmipp_postproc_pix_map_by_code(postproc->src_fmt.code);
 	if (!vpix)
 		return -EINVAL;
 
 	/* clear decimation/crop */
-	reg_clear(ent, DCMIPP_P0PPCR, DCMIPP_P0PPCR_BSM_MASK);
-	reg_clear(ent, DCMIPP_P0PPCR, DCMIPP_P0PPCR_LSM);
-	reg_write(ent, DCMIPP_P0SCSTR, 0);
-	reg_write(ent, DCMIPP_P0SCSZR, 0);
+	reg_clear(postproc, DCMIPP_P0PPCR, DCMIPP_P0PPCR_BSM_MASK);
+	reg_clear(postproc, DCMIPP_P0PPCR, DCMIPP_P0PPCR_LSM);
+	reg_write(postproc, DCMIPP_P0SCSTR, 0);
+	reg_write(postproc, DCMIPP_P0SCSZR, 0);
 
-	if (vpix->pixelformat == V4L2_PIX_FMT_JPEG)
+	if (vpix->code == MEDIA_BUS_FMT_JPEG_1X8)
 		/* Ignore scale/crop with JPEG */
 		return 0;
 
 	/* decimation */
-	hprediv = postproc->common.sink_fmt.width /
-		  postproc->common.src_fmt.width;
+	hprediv = postproc->sink_fmt.width /
+		  postproc->src_fmt.width;
 	if (hprediv == 2)
 		val |= DCMIPP_P0PPCR_BSM_2_4 << DCMIPP_P0PPCR_BSM_SHIFT;
 
-	vprediv = postproc->common.sink_fmt.height /
-		  postproc->common.src_fmt.height;
+	vprediv = postproc->sink_fmt.height /
+		  postproc->src_fmt.height;
 	if (vprediv == 2)
 		val |= DCMIPP_P0PPCR_LSM;/* one line out of two */
 
 	if (val) {
 		/* decimate using bytes and lines skipping */
-		reg_set(ent, DCMIPP_P0PPCR, val);
+		reg_set(postproc, DCMIPP_P0PPCR, val);
 
 		/* crop to decimated resolution */
 		crop.top = 0;
 		crop.left = 0;
-		crop.width = postproc->common.src_fmt.width;
-		crop.height = postproc->common.src_fmt.height;
+		crop.width = postproc->src_fmt.width;
+		crop.height = postproc->src_fmt.height;
 		do_crop = true;
 
-		dev_dbg(postproc->common.dev, "decimate to %dx%d [prediv=%dx%d]\n",
+		dev_dbg(postproc->dev, "decimate to %dx%d [prediv=%dx%d]\n",
 			crop.width, crop.height, hprediv, vprediv);
 	}
 
@@ -339,14 +460,14 @@ static int dcmipp_postproc_configure_scale_crop
 	}
 
 	if (do_crop) {
-		dev_dbg(postproc->common.dev, "crop to %dx%d\n",
+		dev_dbg(postproc->dev, "crop to %dx%d\n",
 			crop.width, crop.height);
 
 		/* expressed in 32-bits words on X axis, lines on Y axis */
-		reg_write(ent, DCMIPP_P0SCSTR,
+		reg_write(postproc, DCMIPP_P0SCSTR,
 			  (((crop.left * vpix->bpp) / 4) << DCMIPP_P0SCSTR_HSTART_SHIFT) |
 			  (crop.top << DCMIPP_P0SCSTR_VSTART_SHIFT));
-		reg_write(ent, DCMIPP_P0SCSZR,
+		reg_write(postproc, DCMIPP_P0SCSZR,
 			  DCMIPP_P0SCSZR_ENABLE |
 			  (((crop.width * vpix->bpp) / 4) << DCMIPP_P0SCSZR_HSIZE_SHIFT) |
 			  (crop.height << DCMIPP_P0SCSZR_VSIZE_SHIFT));
@@ -358,11 +479,9 @@ static int dcmipp_postproc_configure_scale_crop
 static void dcmipp_postproc_configure_framerate
 			(struct dcmipp_postproc_device *postproc)
 {
-	struct dcmipp_common_device *ent = to_dcmipp_common(postproc);
-
 	/* Frame skipping */
-	reg_clear(ent, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_FRATE_MASK);
-	reg_set(ent, DCMIPP_P0FCTCR, postproc->frate);
+	reg_clear(postproc, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_FRATE_MASK);
+	reg_set(postproc, DCMIPP_P0FCTCR, postproc->frate);
 }
 
 static int dcmipp_postproc_g_frame_interval(struct v4l2_subdev *sd,
@@ -370,7 +489,7 @@ static int dcmipp_postproc_g_frame_interval(struct v4l2_subdev *sd,
 {
 	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
 
-	if (IS_SINK(sd, fi->pad)) {
+	if (IS_SINK(fi->pad)) {
 		fi->interval = postproc->sink_interval;
 	} else {
 		fi->interval.numerator = postproc->sink_interval.numerator;
@@ -387,14 +506,14 @@ static int dcmipp_postproc_s_frame_interval(struct v4l2_subdev *sd,
 {
 	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
 
-	mutex_lock(&postproc->common.lock);
+	mutex_lock(&postproc->lock);
 
-	if (postproc->common.streaming) {
-		mutex_unlock(&postproc->common.lock);
+	if (postproc->streaming) {
+		mutex_unlock(&postproc->lock);
 		return -EBUSY;
 	}
 
-	if (IS_SINK(sd, fi->pad)) {
+	if (IS_SINK(fi->pad)) {
 		postproc->sink_interval = fi->interval;
 	} else {
 		if (fi->interval.denominator >=
@@ -413,7 +532,7 @@ static int dcmipp_postproc_s_frame_interval(struct v4l2_subdev *sd,
 		}
 	}
 
-	mutex_unlock(&postproc->common.lock);
+	mutex_unlock(&postproc->lock);
 
 	return 0;
 }
@@ -425,9 +544,15 @@ static int dcmipp_postproc_s_stream(struct v4l2_subdev *sd, int enable)
 	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
-	mutex_lock(&postproc->common.lock);
-
+	mutex_lock(&postproc->lock);
 	if (enable) {
+		/* Postproc subdev do not support different format at sink/src */
+		if (postproc->sink_fmt.code != postproc->src_fmt.code) {
+			dev_err(postproc->dev, "Sink & Src format differ\n");
+			ret = -EPIPE;
+			goto err;
+		}
+
 		dcmipp_postproc_configure_framerate(postproc);
 
 		ret = dcmipp_postproc_configure_scale_crop(postproc);
@@ -436,7 +561,7 @@ static int dcmipp_postproc_s_stream(struct v4l2_subdev *sd, int enable)
 	}
 
 err:
-	mutex_unlock(&postproc->common.lock);
+	mutex_unlock(&postproc->lock);
 
 	return ret;
 }
@@ -452,12 +577,12 @@ static const struct v4l2_subdev_ops dcmipp_postproc_ops = {
 	.video = &dcmipp_postproc_video_ops,
 };
 
+/* FIXME */
 static void dcmipp_postproc_release(struct v4l2_subdev *sd)
 {
-	struct dcmipp_common_device *ent =
-				container_of(sd, struct dcmipp_common_device, sd);
+	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
 
-	kfree(ent);
+	kfree(postproc);
 }
 
 static const struct v4l2_subdev_internal_ops dcmipp_postproc_int_ops = {
@@ -468,10 +593,10 @@ static void dcmipp_postproc_comp_unbind(struct device *comp, struct device *mast
 					void *master_data)
 {
 	struct dcmipp_ent_device *ved = dev_get_drvdata(comp);
-	struct dcmipp_common_device *ent = container_of(ved, struct dcmipp_common_device,
-						    ved);
+	struct dcmipp_postproc_device *postproc =
+			container_of(ved, struct dcmipp_postproc_device, ved);
 
-	dcmipp_ent_sd_unregister(ved, &ent->sd);
+	dcmipp_ent_sd_unregister(ved, &postproc->sd);
 }
 
 static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
@@ -488,7 +613,7 @@ static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
 		return -ENOMEM;
 
 	/* Initialize ved and sd */
-	ret = dcmipp_ent_sd_register(&postproc->common.ved, &postproc->common.sd,
+	ret = dcmipp_ent_sd_register(&postproc->ved, &postproc->sd,
 				     v4l2_dev,
 				     pdata->entity_name,
 				     MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER, 2,
@@ -498,18 +623,17 @@ static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
 				     },
 				     &dcmipp_postproc_int_ops, &dcmipp_postproc_ops,
 				     NULL, NULL,
-				     &postproc->common.regs);
+				     &postproc->regs);
 	if (ret) {
 		kfree(postproc);
 		return ret;
 	}
 
-	dev_set_drvdata(comp, &postproc->common.ved);
-	postproc->common.dev = comp;
-	postproc->common.type = DCMIPP_POSTPROC;
+	dev_set_drvdata(comp, &postproc->ved);
+	postproc->dev = comp;
 
-	/* Pipe identifier */
-	postproc->common.pipe_id = dcmipp_name_to_pipe_id(pdata->entity_name);
+	/* Initialize the frame format */
+	postproc->sink_fmt = postproc->src_fmt = fmt_default;
 
 	return 0;
 }

@@ -29,8 +29,8 @@
 #define DCMIPP_FRAME_MIN_WIDTH 16
 #define DCMIPP_FRAME_MIN_HEIGHT 16
 
-/* Pipe identifier */
-#define DCMIPP_DUMP_PIPE 0
+#define DCMIPP_FMT_WIDTH_DEFAULT  640
+#define DCMIPP_FMT_HEIGHT_DEFAULT 480
 
 #define DCMIPP_FRAME_INDEX(lin, col, width, bpp) \
 	(((lin) * (width) + (col)) * (bpp))
@@ -76,43 +76,6 @@ struct dcmipp_platform_data {
 	char entity_name[32];
 };
 
-/*
- * Enum pointing pipeline stages
- */
-#define DCMIPP_ISP	0
-#define	DCMIPP_POSTPROC	2
-#define INPUT	1
-#define OUTPUT	2
-#define STAGE(pipe, subdev, pad)	(((pad) << (subdev)) << (8 * (pipe)))
-enum dcmipp_pipeline_stage {
-	DCMIPP_PIPE0_POSTPROC_INPUT	= STAGE(0, DCMIPP_POSTPROC, INPUT),
-	DCMIPP_PIPE0_POSTPROC_OUTPUT	= STAGE(0, DCMIPP_POSTPROC, OUTPUT),
-};
-
-/**
- * struct dcmipp_pix_map - maps media bus code with v4l2 pixel format
- *
- * @code:		media bus format code defined by MEDIA_BUS_FMT_* macros
- * @bbp:		number of bytes each pixel occupies
- * @pixelformat:	pixel format devined by V4L2_PIX_FMT_* macros
- *
- * Struct which matches the MEDIA_BUS_FMT_* codes with the corresponding
- * V4L2_PIX_FMT_* fourcc pixelformat and its bytes per pixel (bpp)
- */
-struct dcmipp_pix_map {
-	unsigned int code;
-	unsigned int bpp;
-	u32 pixelformat;
-	u32 csi2_dt;
-	u32 availability;
-	u32 nb_planes;
-	bool bayer;
-	u8 prcr_format;
-	u8 prcr_swapbits;
-	u8 prcr_swaprb;
-	u8 prcr_swapcycles;
-};
-
 /**
  * struct dcmipp_ent_device - core struct that represents a node in the topology
  *
@@ -147,37 +110,6 @@ struct dcmipp_ent_device {
 	struct reset_control **rstc;
 };
 
-struct dcmipp_common_device {
-	struct dcmipp_ent_device ved;
-	struct v4l2_subdev sd;
-	struct device *dev;
-	struct v4l2_mbus_framefmt sink_fmt;
-	struct v4l2_mbus_framefmt src_fmt;
-	bool streaming;
-	/* Protect this data structure */
-	struct mutex lock;
-
-	unsigned int type;
-
-	unsigned int pipe_id;
-
-	void __iomem *regs;
-};
-
-int dcmipp_init_cfg(struct v4l2_subdev *sd,
-		    struct v4l2_subdev_pad_config *cfg);
-int dcmipp_enum_mbus_code(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
-			  struct v4l2_subdev_mbus_code_enum *code);
-int dcmipp_enum_frame_size(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
-			   struct v4l2_subdev_frame_size_enum *fse);
-int dcmipp_get_fmt(struct v4l2_subdev *sd,
-		   struct v4l2_subdev_pad_config *cfg,
-		   struct v4l2_subdev_format *fmt);
-int dcmipp_set_fmt(struct v4l2_subdev *sd,
-		   struct v4l2_subdev_pad_config *cfg,
-		   struct v4l2_subdev_format *fmt);
 /**
  * dcmipp_pads_init - initialize pads
  *
@@ -200,38 +132,6 @@ static inline void dcmipp_pads_cleanup(struct media_pad *pads)
 {
 	kfree(pads);
 }
-
-/**
- * dcmipp_pix_map_by_index - get dcmipp_pix_map struct by its index
- *
- * @i:			index of the dcmipp_pix_map struct in dcmipp_pix_map_list
- */
-const struct dcmipp_pix_map *dcmipp_pix_map_by_index(unsigned int i, u32 stage);
-const struct dcmipp_pix_map *_dcmipp_pix_map_by_index(unsigned int i,
-						      const struct dcmipp_pix_map *l,
-						      unsigned int size);
-
-/**
- * dcmipp_pix_map_by_code - get dcmipp_pix_map struct by media bus code
- *
- * @code:		media bus format code defined by MEDIA_BUS_FMT_* macros
- */
-const struct dcmipp_pix_map *dcmipp_pix_map_by_code(u32 code, u32 stage);
-const struct dcmipp_pix_map *_dcmipp_pix_map_by_code(u32 code,
-						     const struct dcmipp_pix_map *l,
-						     unsigned int size);
-
-/**
- * dcmipp_pix_map_by_pixelformat - get dcmipp_pix_map struct by v4l2 pixel format
- *
- * @pixelformat:	pixel format devined by V4L2_PIX_FMT_* macros
- */
-const struct dcmipp_pix_map *dcmipp_pix_map_by_pixelformat(u32 pixelformat, u32 stage);
-const struct dcmipp_pix_map *_dcmipp_pix_map_by_pixelformat(u32 pixelformat,
-							    const struct dcmipp_pix_map *l,
-							    unsigned int size);
-
-int dcmipp_name_to_pipe_id(const char *name);
 
 /**
  * dcmipp_ent_sd_register - initialize and register a subdev node

@@ -36,11 +36,8 @@
 	.flags = link_flags,					\
 }
 
-#define DCMIPP_NUM_PIPES 1
-
 #define DCMIPP_CMHWCFGR (0x200)
 #define DCMIPP_P0HWCFGR (0x400)
-#define DCMIPP_PXHWCFGR(id) (DCMIPP_P0HWCFGR)
 #define DCMIPP_VERR (0xFF4)
 
 struct dcmipp_graph_entity {
@@ -533,15 +530,12 @@ static int dcmipp_graph_init(struct dcmipp_device *dcmipp)
 
 static void dcmipp_dump_hwconfig(struct dcmipp_device *dcmipp)
 {
-	unsigned int pipe_id;
-
 	dev_dbg(dcmipp->dev, "[DCMIPP_VERR]    =%#10.8x\n",
 		reg_read(dcmipp, DCMIPP_VERR));
 	dev_dbg(dcmipp->dev, "[DCMIPP_CMHWCFGR]=%#10.8x\n",
 		reg_read(dcmipp, DCMIPP_CMHWCFGR));
-	for (pipe_id = 0; pipe_id < DCMIPP_NUM_PIPES; pipe_id++)
-		dev_dbg(dcmipp->dev, "[DCMIPP_P%dHWCFGR]=%#10.8x\n", pipe_id,
-			reg_read(dcmipp, DCMIPP_PXHWCFGR(pipe_id)));
+	dev_dbg(dcmipp->dev, "[DCMIPP_P0HWCFGR]=%#10.8x\n",
+		reg_read(dcmipp, DCMIPP_P0HWCFGR));
 }
 
 static int dcmipp_probe(struct platform_device *pdev)

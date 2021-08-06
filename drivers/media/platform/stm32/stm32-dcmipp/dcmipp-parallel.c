@@ -45,123 +45,94 @@
 
 #define PAR_MEDIA_BUS_FMT_DEFAULT MEDIA_BUS_FMT_RGB565_2X8_LE
 
-static const struct dcmipp_pix_map dcmipp_par_sink_pix_map_list[] = {
-	{
-		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
-	},
-	{
-		.code = MEDIA_BUS_FMT_YUYV8_2X8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_UYVY8_2X8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_Y8_1X8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_JPEG_1X8,
-	},
+struct dcmipp_par_pix_map {
+	unsigned int code_sink;
+	unsigned int code_src;
+	u8 prcr_format;
+	u8 prcr_swapbits;
+	u8 prcr_swapcycles;
 };
 
-static const struct dcmipp_pix_map dcmipp_par_src_pix_map_list[] = {
-	{
-		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
-		.pixelformat = V4L2_PIX_FMT_RGB565,
-		.bpp = 2,
-		.prcr_format = DCMIPP_PRCR_FORMAT_RGB565,
-		.prcr_swapcycles = 1,
-	},
-	{
-		.code = MEDIA_BUS_FMT_YUYV8_2X8,
-		.pixelformat = V4L2_PIX_FMT_YUYV,
-		.bpp = 2,
-		.prcr_format = DCMIPP_PRCR_FORMAT_YUV422,
-		.prcr_swapcycles = 1,
-	},
-	{
-		.code = MEDIA_BUS_FMT_UYVY8_2X8,
-		.pixelformat = V4L2_PIX_FMT_UYVY,
-		.bpp = 2,
-		.prcr_format = DCMIPP_PRCR_FORMAT_YUV422,
-		.prcr_swapcycles = 1,
-	},
-	{
-		.code = MEDIA_BUS_FMT_Y8_1X8,
-		.pixelformat = V4L2_PIX_FMT_GREY,
-		.bpp = 1,
-		.prcr_format = DCMIPP_PRCR_FORMAT_G8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SBGGR8,
-		.bpp = 1,
-		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SGBRG8,
-		.bpp = 1,
-		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SGRBG8,
-		.bpp = 1,
-		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SRGGB8,
-		.bpp = 1,
-		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_JPEG_1X8,
-		.pixelformat = V4L2_PIX_FMT_JPEG,
-		.bpp = 1,
-		.prcr_format = DCMIPP_PRCR_FORMAT_BYTE_STREAM,
-	},
+#define PIXMAP_SINK_SRC_PRCR_SWAP(sink, src, prcr, swap)	\
+		{						\
+			.code_sink = MEDIA_BUS_FMT_##sink,		\
+			.code_src = MEDIA_BUS_FMT_##src,		\
+			.prcr_format = DCMIPP_PRCR_FORMAT_##prcr,	\
+			.prcr_swapcycles = swap,		\
+		}
+static const struct dcmipp_par_pix_map dcmipp_par_pix_map_list[] = {
+	/* RGB565 */
+	PIXMAP_SINK_SRC_PRCR_SWAP(RGB565_2X8_LE, RGB565_2X8_LE, RGB565, 1),
+	PIXMAP_SINK_SRC_PRCR_SWAP(RGB565_2X8_BE, RGB565_2X8_LE, RGB565, 0),
+	/* YUV422 */
+	PIXMAP_SINK_SRC_PRCR_SWAP(YUYV8_2X8, YUYV8_2X8, YUV422, 1),
+	PIXMAP_SINK_SRC_PRCR_SWAP(YUYV8_2X8, UYVY8_2X8, YUV422, 0),
+	PIXMAP_SINK_SRC_PRCR_SWAP(UYVY8_2X8, UYVY8_2X8, YUV422, 1),
+	PIXMAP_SINK_SRC_PRCR_SWAP(UYVY8_2X8, YUYV8_2X8, YUV422, 0),
+	PIXMAP_SINK_SRC_PRCR_SWAP(YVYU8_2X8, YVYU8_2X8, YUV422, 1),
+	PIXMAP_SINK_SRC_PRCR_SWAP(VYUY8_2X8, VYUY8_2X8, YUV422, 1),
+	/* GREY */
+	PIXMAP_SINK_SRC_PRCR_SWAP(Y8_1X8, Y8_1X8, G8, 0),
+	/* Raw Bayer */
+	PIXMAP_SINK_SRC_PRCR_SWAP(SBGGR8_1X8, SBGGR8_1X8, RAW8, 0),
+	PIXMAP_SINK_SRC_PRCR_SWAP(SGBRG8_1X8, SGBRG8_1X8, RAW8, 0),
+	PIXMAP_SINK_SRC_PRCR_SWAP(SGRBG8_1X8, SGRBG8_1X8, RAW8, 0),
+	PIXMAP_SINK_SRC_PRCR_SWAP(SRGGB8_1X8, SRGGB8_1X8, RAW8, 0),
+	/* JPEG */
+	PIXMAP_SINK_SRC_PRCR_SWAP(JPEG_1X8, JPEG_1X8, BYTE_STREAM, 0),
 };
 
-const struct dcmipp_pix_map *__dcmipp_pix_map_by_index(unsigned int i,
-						       __u32 pad)
+/*
+ * Search through the pix_map table, skipping two consecutive entry with the
+ * same code
+ */
+static inline const struct dcmipp_par_pix_map *dcmipp_par_pix_map_by_index
+						(unsigned int index,
+						 unsigned int pad)
 {
-	if (IS_SINK(pad))
-		return _dcmipp_pix_map_by_index
-				(i, dcmipp_par_sink_pix_map_list,
-				 ARRAY_SIZE(dcmipp_par_sink_pix_map_list));
-	else if (IS_SRC(pad))
-		return _dcmipp_pix_map_by_index
-				(i, dcmipp_par_src_pix_map_list,
-				 ARRAY_SIZE(dcmipp_par_src_pix_map_list));
+	const struct dcmipp_par_pix_map *l = dcmipp_par_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_par_pix_map_list);
+	unsigned int i = 0;
+	u32 prev_code = 0, cur_code;
 
-	return NULL;
+	while(i < size) {
+		if (IS_SRC(pad))
+			cur_code = l[i].code_src;
+		else
+			cur_code = l[i].code_sink;
+
+		if (cur_code == prev_code) {
+			i++;
+			continue;
+		} else
+			prev_code = cur_code;
+
+		if (index == 0)
+			break;
+		i++;
+		index--;
+	}
+
+	if (i >= size)
+		return NULL;
+
+	return &l[i];
 }
 
-const struct dcmipp_pix_map *__dcmipp_pix_map_by_code(u32 code,
-						      __u32 pad)
+static inline const struct dcmipp_par_pix_map *dcmipp_par_pix_map_by_code
+					(u32 code_sink, u32 code_src)
 {
-	if (IS_SINK(pad))
-		return _dcmipp_pix_map_by_code
-				(code, dcmipp_par_sink_pix_map_list,
-				 ARRAY_SIZE(dcmipp_par_sink_pix_map_list));
-	else if (IS_SRC(pad))
-		return _dcmipp_pix_map_by_code
-				(code, dcmipp_par_src_pix_map_list,
-				 ARRAY_SIZE(dcmipp_par_src_pix_map_list));
+	const struct dcmipp_par_pix_map *l = dcmipp_par_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_par_pix_map_list);
+	unsigned int i;
 
+	for (i = 0; i < size; i++) {
+		if (((l[i].code_sink == code_sink) && (l[i].code_src == code_src)) ||
+		    ((l[i].code_sink == code_src) && (l[i].code_src == code_sink)) ||
+		    ((l[i].code_sink == code_sink) && (code_src == 0)) ||
+		    ((code_sink == 0) && (l[i].code_src == code_src)))
+			return &l[i];
+	}
 	return NULL;
 }
 
@@ -170,7 +141,8 @@ struct dcmipp_par_device {
 	struct v4l2_subdev sd;
 	struct device *dev;
 	/* The active format */
-	struct v4l2_mbus_framefmt mbus_format;
+	struct v4l2_mbus_framefmt sink_format;
+	struct v4l2_mbus_framefmt src_format;
 	bool streaming;
 	void __iomem			*regs;
 	u32				prsr;
@@ -179,8 +151,8 @@ struct dcmipp_par_device {
 };
 
 static const struct v4l2_mbus_framefmt fmt_default = {
-	.width = 640,
-	.height = 480,
+	.width = DCMIPP_FMT_WIDTH_DEFAULT,
+	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
 	.code = PAR_MEDIA_BUS_FMT_DEFAULT,
 	.field = V4L2_FIELD_NONE,
 	.colorspace = V4L2_COLORSPACE_DEFAULT,
@@ -205,13 +177,13 @@ static int dcmipp_par_enum_mbus_code(struct v4l2_subdev *sd,
 				     struct v4l2_subdev_pad_config *cfg,
 				     struct v4l2_subdev_mbus_code_enum *code)
 {
-	const struct dcmipp_pix_map *vpix =
-		__dcmipp_pix_map_by_index(code->index, code->pad);
+	const struct dcmipp_par_pix_map *vpix =
+		dcmipp_par_pix_map_by_index(code->index, code->pad);
 
 	if (!vpix)
 		return -EINVAL;
 
-	code->code = vpix->code;
+	code->code = IS_SRC(code->pad) ? vpix->code_src : vpix->code_sink;
 
 	return 0;
 }
@@ -220,13 +192,14 @@ static int dcmipp_par_enum_frame_size(struct v4l2_subdev *sd,
 				      struct v4l2_subdev_pad_config *cfg,
 				      struct v4l2_subdev_frame_size_enum *fse)
 {
-	const struct dcmipp_pix_map *vpix;
+	const struct dcmipp_par_pix_map *vpix;
 
 	if (fse->index)
 		return -EINVAL;
 
 	/* Only accept code in the pix map table */
-	vpix = __dcmipp_pix_map_by_code(fse->code, fse->pad);
+	vpix = dcmipp_par_pix_map_by_code(IS_SINK(fse->pad)?fse->code:0,
+					  IS_SRC(fse->pad)?fse->code:0);
 	if (!vpix)
 		return -EINVAL;
 
@@ -247,17 +220,18 @@ static int dcmipp_par_get_fmt(struct v4l2_subdev *sd,
 
 	fmt->format = fmt->which == V4L2_SUBDEV_FORMAT_TRY ?
 		      *v4l2_subdev_get_try_format(sd, cfg, fmt->pad) :
-		      par->mbus_format;
+		      (IS_SRC(fmt->pad) ? par->src_format : par->sink_format);
 
 	return 0;
 }
 
 static void dcmipp_par_adjust_fmt(struct v4l2_mbus_framefmt *fmt, __u32 pad)
 {
-	const struct dcmipp_pix_map *vpix;
+	const struct dcmipp_par_pix_map *vpix;
 
 	/* Only accept code in the pix map table */
-	vpix = __dcmipp_pix_map_by_code(fmt->code, pad);
+	vpix = dcmipp_par_pix_map_by_code(IS_SINK(pad)?fmt->code:0,
+					  IS_SRC(pad)?fmt->code:0);
 	if (!vpix)
 		fmt->code = fmt_default.code;
 
@@ -284,7 +258,7 @@ static int dcmipp_par_set_fmt(struct v4l2_subdev *sd,
 		if (par->streaming)
 			return -EBUSY;
 
-		mf = &par->mbus_format;
+		mf = IS_SRC(fmt->pad) ? &par->src_format : &par->sink_format;
 	} else {
 		mf = v4l2_subdev_get_try_format(sd, cfg, fmt->pad);
 	}
@@ -305,6 +279,10 @@ static int dcmipp_par_set_fmt(struct v4l2_subdev *sd,
 
 	*mf = fmt->format;
 
+	/* When setting the sink format, report that format on the src pad as well */
+	if (IS_SINK(fmt->pad))
+		par->src_format = fmt->format;
+
 	return 0;
 }
 
@@ -319,7 +297,7 @@ static const struct v4l2_subdev_pad_ops dcmipp_par_pad_ops = {
 static int dcmipp_par_configure(struct dcmipp_par_device *par)
 {
 	u32 val = 0;
-	const struct dcmipp_pix_map *vpix;
+	const struct dcmipp_par_pix_map *vpix;
 
 	/* Set vertical synchronization polarity */
 	if (par->ved.bus.flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH)
@@ -334,7 +312,13 @@ static int dcmipp_par_configure(struct dcmipp_par_device *par)
 		val |= DCMIPP_PRCR_PCKPOL;
 
 	/* Set format */
-	vpix = __dcmipp_pix_map_by_code(par->mbus_format.code, 1);
+	vpix = dcmipp_par_pix_map_by_code(par->sink_format.code,
+					  par->src_format.code);
+	if (!vpix) {
+		dev_err(par->dev, "Invalid sink/src format configuration\n");
+		return -EINVAL;
+	}
+
 	val |= vpix->prcr_format << DCMIPP_PRCR_FORMAT_SHIFT;
 
 	/* swap LSB vs MSB within one cycle */
@@ -358,6 +342,8 @@ static int dcmipp_par_s_stream(struct v4l2_subdev *sd, int enable)
 
 	if (enable) {
 		ret = dcmipp_par_configure(par);
+		if (ret)
+			return ret;
 
 		par->errors_count = 0;
 		par->buffers_count = 0;
@@ -457,7 +443,7 @@ static int dcmipp_par_comp_bind(struct device *comp, struct device *master,
 	par->dev = comp;
 
 	/* Initialize the frame format */
-	par->mbus_format = fmt_default;
+	par->sink_format = par->src_format = fmt_default;
 
 	return 0;
 

@@ -54,44 +54,54 @@
 #define DCMIPP_P0SR (0x5F8)
 #define DCMIPP_P0SR_CPTACT BIT(23)
 
-static const struct dcmipp_pix_map dcmipp_capture_pix_map_list[] = {
-	{
-		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
-		.pixelformat = V4L2_PIX_FMT_RGB565,
-	},
-	{
-		.code = MEDIA_BUS_FMT_YUYV8_2X8,
-		.pixelformat = V4L2_PIX_FMT_YUYV,
-	},
-	{
-		.code = MEDIA_BUS_FMT_UYVY8_2X8,
-		.pixelformat = V4L2_PIX_FMT_UYVY,
-	},
-	{
-		.code = MEDIA_BUS_FMT_Y8_1X8,
-		.pixelformat = V4L2_PIX_FMT_GREY,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SBGGR8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SGBRG8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SGRBG8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
-		.pixelformat = V4L2_PIX_FMT_SRGGB8,
-	},
-	{
-		.code = MEDIA_BUS_FMT_JPEG_1X8,
-		.pixelformat = V4L2_PIX_FMT_JPEG,
-	},
+struct dcmipp_capture_pix_map {
+	unsigned int code;
+	u32 pixelformat;
 };
+#define PIXMAP_MBUS_PFMT(mbus, fmt)				\
+		{						\
+			.code = MEDIA_BUS_FMT_##mbus,		\
+			.pixelformat = V4L2_PIX_FMT_##fmt	\
+		}
+static const struct dcmipp_capture_pix_map dcmipp_capture_pix_map_list[] = {
+	PIXMAP_MBUS_PFMT(RGB565_2X8_LE, RGB565),
+	PIXMAP_MBUS_PFMT(YUYV8_2X8, YUYV),
+	PIXMAP_MBUS_PFMT(YVYU8_2X8, YVYU),
+	PIXMAP_MBUS_PFMT(UYVY8_2X8, UYVY),
+	PIXMAP_MBUS_PFMT(VYUY8_2X8, VYUY),
+	PIXMAP_MBUS_PFMT(Y8_1X8, GREY),
+	PIXMAP_MBUS_PFMT(SBGGR8_1X8, SBGGR8),
+	PIXMAP_MBUS_PFMT(SGBRG8_1X8, SGBRG8),
+	PIXMAP_MBUS_PFMT(SGRBG8_1X8, SGRBG8),
+	PIXMAP_MBUS_PFMT(SRGGB8_1X8, SRGGB8),
+	PIXMAP_MBUS_PFMT(JPEG_1X8, JPEG),
+};
+
+static const struct dcmipp_capture_pix_map *dcmipp_capture_pix_map_by_pixelformat
+						(u32 pixelformat)
+{
+	const struct dcmipp_capture_pix_map *l = dcmipp_capture_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_capture_pix_map_list);
+	unsigned int i;
+
+	for (i = 0; i < size; i++) {
+		if (l[i].pixelformat == pixelformat)
+			return &l[i];
+	}
+
+	return NULL;
+}
+
+static const struct dcmipp_capture_pix_map *dcmipp_capture_pix_map_by_index(unsigned int i)
+{
+	const struct dcmipp_capture_pix_map *l = dcmipp_capture_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_capture_pix_map_list);
+
+	if (i >= size)
+		return NULL;
+
+	return &l[i];
+}
 
 struct dcmipp_buf {
 	struct vb2_v4l2_buffer	vb;
@@ -100,27 +110,6 @@ struct dcmipp_buf {
 	size_t			size;
 	struct list_head	list;
 };
-
-const struct dcmipp_pix_map *__dcmipp_pix_map_by_index(unsigned int i)
-{
-	return _dcmipp_pix_map_by_index
-			(i, dcmipp_capture_pix_map_list,
-			 ARRAY_SIZE(dcmipp_capture_pix_map_list));
-}
-
-const struct dcmipp_pix_map *__dcmipp_pix_map_by_code(u32 code)
-{
-	return _dcmipp_pix_map_by_code
-			(code, dcmipp_capture_pix_map_list,
-			 ARRAY_SIZE(dcmipp_capture_pix_map_list));
-}
-
-static const struct dcmipp_pix_map *__dcmipp_pix_map_by_pixelformat(u32 pixelformat)
-{
-	return _dcmipp_pix_map_by_pixelformat
-			(pixelformat, dcmipp_capture_pix_map_list,
-			 ARRAY_SIZE(dcmipp_capture_pix_map_list));
-}
 
 enum state {
 	STOPPED = 0,
@@ -141,7 +130,6 @@ struct dcmipp_cap_device {
 	struct mutex lock;
 	u32 sequence;
 	struct media_pipeline pipe;
-	unsigned int pipe_id;
 
 	enum state state;
 
@@ -163,8 +151,8 @@ struct dcmipp_cap_device {
 };
 
 static const struct v4l2_pix_format fmt_default = {
-	.width = 640,
-	.height = 480,
+	.width = DCMIPP_FMT_WIDTH_DEFAULT,
+	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
 	.pixelformat = V4L2_PIX_FMT_RGB565,
 	.field = V4L2_FIELD_NONE,
 	.colorspace = V4L2_COLORSPACE_DEFAULT,
@@ -275,15 +263,13 @@ static int dcmipp_cap_try_fmt_vid_cap(struct file *file, void *priv,
 {
 	struct dcmipp_cap_device *vcap = video_drvdata(file);
 	struct v4l2_pix_format *format = &f->fmt.pix;
-	const struct dcmipp_pix_map *vpix;
+	const struct dcmipp_capture_pix_map *vpix;
 	u32 in_w, in_h;
 
 	/* Don't accept a pixelformat that is not on the table */
-	vpix = __dcmipp_pix_map_by_pixelformat(format->pixelformat);
-	if (!vpix) {
+	vpix = dcmipp_capture_pix_map_by_pixelformat(format->pixelformat);
+	if (!vpix)
 		format->pixelformat = fmt_default.pixelformat;
-		vpix = __dcmipp_pix_map_by_pixelformat(format->pixelformat);
-	}
 
 	/* Adjust width & height */
 	in_w = format->width;
@@ -346,7 +332,7 @@ static int dcmipp_cap_s_fmt_vid_cap(struct file *file, void *priv,
 static int dcmipp_cap_enum_fmt_vid_cap(struct file *file, void *priv,
 				       struct v4l2_fmtdesc *f)
 {
-	const struct dcmipp_pix_map *vpix = __dcmipp_pix_map_by_index(f->index);
+	const struct dcmipp_capture_pix_map *vpix = dcmipp_capture_pix_map_by_index(f->index);
 
 	if (!vpix)
 		return -EINVAL;
@@ -359,13 +345,13 @@ static int dcmipp_cap_enum_fmt_vid_cap(struct file *file, void *priv,
 static int dcmipp_cap_enum_framesizes(struct file *file, void *fh,
 				      struct v4l2_frmsizeenum *fsize)
 {
-	const struct dcmipp_pix_map *vpix;
+	const struct dcmipp_capture_pix_map *vpix;
 
 	if (fsize->index)
 		return -EINVAL;
 
 	/* Only accept code in the pix map table */
-	vpix = __dcmipp_pix_map_by_code(fsize->pixel_format);
+	vpix = dcmipp_capture_pix_map_by_pixelformat(fsize->pixel_format);
 	if (!vpix)
 		return -EINVAL;
 
@@ -560,8 +546,7 @@ static void dcmipp_dump_status(struct dcmipp_cap_device *vcap)
 	struct device *dev = vcap->dev;
 
 	dev_dbg(dev, "[DCMIPP_PRSR]  =%#10.8x\n", reg_read(vcap, DCMIPP_PRSR));
-	dev_dbg(dev, "[DCMIPP_P%dSR] =%#10.8x\n", vcap->pipe_id,
-		reg_read(vcap, DCMIPP_P0SR));
+	dev_dbg(dev, "[DCMIPP_P0SR] =%#10.8x\n", reg_read(vcap, DCMIPP_P0SR));
 	dev_dbg(dev, "[DCMIPP_P0DCCNTR]=%#10.8x\n",
 		reg_read(vcap, DCMIPP_P0DCCNTR));
 	dev_dbg(dev, "[DCMIPP_CMSR1] =%#10.8x\n", reg_read(vcap, DCMIPP_CMSR1));
@@ -929,7 +914,6 @@ static int dcmipp_cap_comp_bind(struct device *comp, struct device *master,
 {
 	struct v4l2_device *v4l2_dev = master_data;
 	struct dcmipp_platform_data *pdata = comp->platform_data;
-	const struct dcmipp_pix_map *vpix;
 	struct dcmipp_cap_device *vcap;
 	struct v4l2_pix_format *format;
 	struct video_device *vdev;
@@ -948,9 +932,6 @@ static int dcmipp_cap_comp_bind(struct device *comp, struct device *master,
 		ret = PTR_ERR(vcap->ved.pads);
 		goto err_free_vcap;
 	}
-
-	/* Pipe identifier */
-	vcap->pipe_id = dcmipp_name_to_pipe_id(pdata->entity_name);
 
 	/* Initialize the media entity */
 	vcap->vdev.entity.name = pdata->entity_name;
@@ -990,7 +971,6 @@ static int dcmipp_cap_comp_bind(struct device *comp, struct device *master,
 	/* Set default frame format */
 	vcap->format = fmt_default;
 	format = &vcap->format;
-	vpix = __dcmipp_pix_map_by_pixelformat(format->pixelformat);
 	format->bytesperline = frame_stride(format->width, format->pixelformat);
 	format->sizeimage = frame_size(format->width, format->height, format->pixelformat);
 
