@@ -10,6 +10,7 @@
 
 #include <linux/component.h>
 #include <linux/delay.h>
+#include <linux/iopoll.h>
 #include <linux/module.h>
 #include <linux/mod_devicetable.h>
 #include <linux/platform_device.h>
@@ -22,9 +23,6 @@
 #include "dcmipp-common.h"
 
 #define DCMIPP_CAP_DRV_NAME "dcmipp-bytecap"
-
-#define STOP_TIMEOUT_US 1000
-#define POLL_INTERVAL_US  50
 
 #define DCMIPP_PRSR (0x1F8)
 #define DCMIPP_CMIER (0x3F0)
@@ -597,7 +595,8 @@ static void dcmipp_cap_stop_streaming(struct vb2_queue *vq)
 {
 	struct dcmipp_cap_device *vcap = vb2_get_drv_priv(vq);
 	struct dcmipp_buf *buf, *node;
-	unsigned int timeleft;
+	int ret;
+	u32 status;
 
 	dcmipp_pipeline_s_stream(vcap, 0);
 
@@ -612,18 +611,12 @@ static void dcmipp_cap_stop_streaming(struct vb2_queue *vq)
 	/* Stop capture */
 	reg_clear(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 
-	timeleft = STOP_TIMEOUT_US / POLL_INTERVAL_US;
-	while (timeleft) {
-		u32 val;
-
-		val = reg_read(vcap, DCMIPP_P0SR);
-		if (!(val & DCMIPP_P0SR_CPTACT))
-			break;
-
-		udelay(POLL_INTERVAL_US);
-		timeleft--;
-	}
-	if (!timeleft)
+	/* Wait until CPTACT become 0 */
+	ret = readl_relaxed_poll_timeout(vcap->regs + DCMIPP_P0SR,
+					 status,
+					 !(status & DCMIPP_P0SR_CPTACT),
+					 20, 1000);
+	if (ret)
 		dev_warn(vcap->dev, "Timeout when stopping\n");
 
 	/* Disable pipe */
@@ -643,7 +636,7 @@ static void dcmipp_cap_stop_streaming(struct vb2_queue *vq)
 
 	spin_unlock_irq(&vcap->irqlock);
 
-	if (!timeleft) {
+	if (ret) {
 		/* Reset IP on timeout */
 		if (reset_control_assert(vcap->rstc))
 			dev_warn(vcap->dev, "Failed to assert the reset line\n");
