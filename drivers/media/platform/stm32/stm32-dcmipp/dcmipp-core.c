@@ -53,7 +53,6 @@ struct dcmipp_device {
 	/* Hardware resources */
 	struct reset_control		*rstc;
 	void __iomem			*regs;
-	struct resource			*res;
 	struct clk			*mclk;
 	struct clk			*kclk;
 
@@ -543,6 +542,7 @@ static int dcmipp_probe(struct platform_device *pdev)
 	struct dcmipp_device *dcmipp;
 	const struct of_device_id *match = NULL;
 	struct component_match *comp_match = NULL;
+	struct resource *res;
 	struct clk *kclk;
 	int irq;
 	int ret;
@@ -577,13 +577,13 @@ static int dcmipp_probe(struct platform_device *pdev)
 		return irq ? irq : -ENXIO;
 	}
 
-	dcmipp->res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!dcmipp->res) {
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res) {
 		dev_err(&pdev->dev, "Could not get resource\n");
 		return -ENODEV;
 	}
 
-	dcmipp->regs = devm_ioremap_resource(&pdev->dev, dcmipp->res);
+	dcmipp->regs = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(dcmipp->regs)) {
 		dev_err(&pdev->dev, "Could not map registers\n");
 		return PTR_ERR(dcmipp->regs);
