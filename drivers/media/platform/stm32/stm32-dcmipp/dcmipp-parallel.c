@@ -35,11 +35,6 @@
 #define DCMIPP_PRCR_SWAPCYCLES BIT(25)
 #define DCMIPP_PRCR_SWAPBITS BIT(26)
 
-#define DCMIPP_PRSR_ERRF BIT(6)
-
-#define DCMIPP_PRIER (0x1F4)
-#define DCMIPP_PRIER_ERRIE BIT(6)
-
 #define IS_SINK(pad) (!(pad))
 #define IS_SRC(pad)  ((pad))
 
@@ -145,9 +140,6 @@ struct dcmipp_par_device {
 	struct v4l2_mbus_framefmt src_format;
 	bool streaming;
 	void __iomem			*regs;
-	u32				prsr;
-	int				errors_count;
-	int				buffers_count;
 };
 
 static const struct v4l2_mbus_framefmt fmt_default = {
@@ -345,23 +337,11 @@ static int dcmipp_par_s_stream(struct v4l2_subdev *sd, int enable)
 		if (ret)
 			return ret;
 
-		par->errors_count = 0;
-		par->buffers_count = 0;
-
-		/* Enable error interruptions */
-		reg_write(par, DCMIPP_PRIER, DCMIPP_PRIER_ERRIE);
-
 		/* Enable parallel interface */
 		reg_set(par, DCMIPP_PRCR, DCMIPP_PRCR_ENABLE);
 	} else {
 		/* Disable parallel interface */
 		reg_clear(par, DCMIPP_PRCR, DCMIPP_PRCR_ENABLE);
-
-		if (par->errors_count)
-			dev_warn(par->dev, "Some errors found while streaming: errors=%d, buffers=%d\n",
-				 par->errors_count, par->buffers_count);
-		dev_dbg(par->dev, "Stop streaming, errors=%d, buffers=%d\n",
-			par->errors_count, par->buffers_count);
 	}
 
 	par->streaming = enable;
@@ -399,17 +379,6 @@ static void dcmipp_par_comp_unbind(struct device *comp, struct device *master,
 	dcmipp_ent_sd_unregister(ved, &par->sd);
 }
 
-static irqreturn_t dcmipp_par_irq_thread(int irq, void *arg)
-{
-	struct dcmipp_par_device *par =
-			container_of(arg, struct dcmipp_par_device, ved);
-
-	if (par->prsr & DCMIPP_PRSR_ERRF)
-		par->errors_count++;
-
-	return IRQ_HANDLED;
-}
-
 static int dcmipp_par_comp_bind(struct device *comp, struct device *master,
 				void *master_data)
 {
@@ -433,8 +402,7 @@ static int dcmipp_par_comp_bind(struct device *comp, struct device *master,
 		  MEDIA_PAD_FL_SOURCE,
 		  },
 		 &dcmipp_par_int_ops, &dcmipp_par_ops,
-		 NULL,
-		 dcmipp_par_irq_thread,
+		 NULL, NULL,
 		 &par->regs);
 	if (ret)
 		goto err_free_hdl;
