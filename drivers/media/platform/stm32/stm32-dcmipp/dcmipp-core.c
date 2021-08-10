@@ -357,7 +357,7 @@ static irqreturn_t dcmipp_irq_thread(int irq, void *arg)
 	/* Call irq thread of each entities of pipeline */
 	for (i = 0; i < dcmipp->pipe_cfg->num_ents; i++) {
 		ved = platform_get_drvdata(dcmipp->subdevs[i]);
-		if (ved->thread_fn)
+		if (ved->thread_fn && (ved->handler_ret == IRQ_WAKE_THREAD))
 			ved->thread_fn(irq, ved);
 	}
 
@@ -369,6 +369,7 @@ static irqreturn_t dcmipp_irq_callback(int irq, void *arg)
 {
 	struct dcmipp_device *dcmipp = arg;
 	struct dcmipp_ent_device *ved;
+	irqreturn_t ret = IRQ_HANDLED;
 	unsigned long flags;
 	unsigned int i;
 
@@ -378,12 +379,18 @@ static irqreturn_t dcmipp_irq_callback(int irq, void *arg)
 	for (i = 0; i < dcmipp->pipe_cfg->num_ents; i++) {
 		ved = platform_get_drvdata(dcmipp->subdevs[i]);
 		if (ved->handler)
-			ved->handler(irq, ved);
+			ved->handler_ret = ved->handler(irq, ved);
+		else if(ved->thread_fn)
+			ved->handler_ret = IRQ_WAKE_THREAD;
+		else
+			ved->handler_ret = IRQ_HANDLED;
+		if (ved->handler_ret != IRQ_HANDLED)
+			ret = ved->handler_ret;
 	}
 
 	spin_unlock_irqrestore(&dcmipp->irqlock, flags);
 
-	return IRQ_WAKE_THREAD;
+	return ret;
 }
 
 static int dcmipp_graph_notify_bound(struct v4l2_async_notifier *notifier,
