@@ -735,7 +735,8 @@ static struct platform_driver dcmipp_pdrv = {
 
 module_platform_driver(dcmipp_pdrv);
 
-MODULE_AUTHOR("Hugues Fruchet <hugues.fruchet@st.com>");
+MODULE_AUTHOR("Hugues Fruchet <hugues.fruchet@foss.st.com>");
+MODULE_AUTHOR("Alain Volmat <alain.volmat@foss.st.com>");
 MODULE_DESCRIPTION("STMicroelectronics STM32 Digital Camera Memory Interface with Pixel Processor driver");
 MODULE_LICENSE("GPL");
 MODULE_SUPPORTED_DEVICE("video");

@@ -676,6 +676,7 @@ module_platform_driver(dcmipp_postproc_pdrv);
 
 MODULE_DEVICE_TABLE(platform, dcmipp_postproc_driver_ids);
 
-MODULE_AUTHOR("Hugues Fruchet <hugues.fruchet@st.com>");
+MODULE_AUTHOR("Hugues Fruchet <hugues.fruchet@foss.st.com>");
+MODULE_AUTHOR("Alain Volmat <alain.volmat@foss.st.com>");
 MODULE_DESCRIPTION("STMicroelectronics STM32 Digital Camera Memory Interface with Pixel Processor driver");
 MODULE_LICENSE("GPL");
