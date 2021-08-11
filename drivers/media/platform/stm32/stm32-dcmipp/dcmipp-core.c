@@ -221,8 +221,6 @@ static int dcmipp_comp_bind(struct device *master)
 
 	return 0;
 
-	media_device_unregister(&dcmipp->mdev);
-	media_device_cleanup(&dcmipp->mdev);
 err_comp_unbind_all:
 	component_unbind_all(master, NULL);
 err_v4l2_unregister:
