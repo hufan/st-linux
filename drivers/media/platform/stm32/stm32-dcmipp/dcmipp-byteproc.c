@@ -602,7 +602,7 @@ static void dcmipp_postproc_comp_unbind(struct device *comp, struct device *mast
 static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
 				     void *master_data)
 {
-	struct v4l2_device *v4l2_dev = master_data;
+	struct dcmipp_bind_data *bind_data = master_data;
 	struct dcmipp_platform_data *pdata = comp->platform_data;
 	struct dcmipp_postproc_device *postproc;
 	int ret;
@@ -612,9 +612,11 @@ static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
 	if (!postproc)
 		return -ENOMEM;
 
+	postproc->regs = bind_data->regs;
+
 	/* Initialize ved and sd */
 	ret = dcmipp_ent_sd_register(&postproc->ved, &postproc->sd,
-				     v4l2_dev,
+				     bind_data->v4l2_dev,
 				     pdata->entity_name,
 				     MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER, 2,
 				     (const unsigned long[2]) {
@@ -622,8 +624,7 @@ static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
 				     MEDIA_PAD_FL_SOURCE,
 				     },
 				     &dcmipp_postproc_int_ops, &dcmipp_postproc_ops,
-				     NULL, NULL,
-				     &postproc->regs);
+				     NULL, NULL);
 	if (ret) {
 		kfree(postproc);
 		return ret;

@@ -189,8 +189,7 @@ static int dcmipp_graph_init(struct dcmipp_device *dcmipp);
 static int dcmipp_comp_bind(struct device *master)
 {
 	struct dcmipp_device *dcmipp = platform_get_drvdata(to_platform_device(master));
-	struct dcmipp_ent_device *ved;
-	unsigned int i;
+	struct dcmipp_bind_data bind_data;
 	int ret;
 
 	dev_dbg(master, "bind");
@@ -204,7 +203,10 @@ static int dcmipp_comp_bind(struct device *master)
 	}
 
 	/* Bind subdevices */
-	ret = component_bind_all(master, &dcmipp->v4l2_dev);
+	bind_data.v4l2_dev = &dcmipp->v4l2_dev;
+	bind_data.rstc = dcmipp->rstc;
+	bind_data.regs = dcmipp->regs;
+	ret = component_bind_all(master, &bind_data);
 	if (ret)
 		goto err_v4l2_unregister;
 
@@ -216,18 +218,6 @@ static int dcmipp_comp_bind(struct device *master)
 	ret = dcmipp_graph_init(dcmipp);
 	if (ret < 0)
 		return ret;
-
-	/*
-	 * FIXME, find a better way to do this
-	 * Initialize shared resources
-	 */
-	for (i = 0; i < dcmipp->pipe_cfg->num_ents; i++) {
-		ved = platform_get_drvdata(dcmipp->subdevs[i]);
-		if (ved->regs)
-			*ved->regs = dcmipp->regs;
-		if (ved->rstc)
-			*ved->rstc = dcmipp->rstc;
-	}
 
 	return 0;
 

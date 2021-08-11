@@ -55,8 +55,7 @@ int dcmipp_ent_sd_register(struct dcmipp_ent_device *ved,
 			   const struct v4l2_subdev_internal_ops *sd_int_ops,
 			   const struct v4l2_subdev_ops *sd_ops,
 			   irq_handler_t handler,
-			   irq_handler_t thread_fn,
-			   void __iomem **regs)
+			   irq_handler_t thread_fn)
 {
 	int ret;
 
@@ -98,7 +97,6 @@ int dcmipp_ent_sd_register(struct dcmipp_ent_device *ved,
 
 	ved->handler = handler;
 	ved->thread_fn = thread_fn;
-	ved->regs = regs;
 
 	return 0;
 

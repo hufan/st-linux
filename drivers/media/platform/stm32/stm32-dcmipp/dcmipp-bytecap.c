@@ -941,7 +941,7 @@ static irqreturn_t dcmipp_cap_irq_callback(int irq, void *arg)
 static int dcmipp_cap_comp_bind(struct device *comp, struct device *master,
 				void *master_data)
 {
-	struct v4l2_device *v4l2_dev = master_data;
+	struct dcmipp_bind_data *bind_data = master_data;
 	struct dcmipp_platform_data *pdata = comp->platform_data;
 	struct dcmipp_cap_device *vcap;
 	struct v4l2_pix_format *format;
@@ -1008,10 +1008,10 @@ static int dcmipp_cap_comp_bind(struct device *comp, struct device *master,
 	vcap->ved.vdev_get_format = dcmipp_cap_get_format;
 	vcap->ved.handler = dcmipp_cap_irq_callback;
 	vcap->ved.thread_fn = dcmipp_cap_irq_thread;
-	vcap->ved.regs = &vcap->regs;
-	vcap->ved.rstc = &vcap->rstc;
 	dev_set_drvdata(comp, &vcap->ved);
 	vcap->dev = comp;
+	vcap->regs = bind_data->regs;
+	vcap->rstc = bind_data->rstc;
 
 	/* Initialize the video_device struct */
 	vdev = &vcap->vdev;
@@ -1023,7 +1023,7 @@ static int dcmipp_cap_comp_bind(struct device *comp, struct device *master,
 	vdev->ioctl_ops = &dcmipp_cap_ioctl_ops;
 	vdev->lock = &vcap->lock;
 	vdev->queue = q;
-	vdev->v4l2_dev = v4l2_dev;
+	vdev->v4l2_dev = bind_data->v4l2_dev;
 	strscpy(vdev->name, pdata->entity_name, sizeof(vdev->name));
 	video_set_drvdata(vdev, &vcap->ved);
 

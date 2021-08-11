@@ -382,7 +382,7 @@ static void dcmipp_par_comp_unbind(struct device *comp, struct device *master,
 static int dcmipp_par_comp_bind(struct device *comp, struct device *master,
 				void *master_data)
 {
-	struct v4l2_device *v4l2_dev = master_data;
+	struct dcmipp_bind_data *bind_data = master_data;
 	struct dcmipp_platform_data *pdata = comp->platform_data;
 	struct dcmipp_par_device *par;
 	int ret;
@@ -392,9 +392,11 @@ static int dcmipp_par_comp_bind(struct device *comp, struct device *master,
 	if (!par)
 		return -ENOMEM;
 
+	par->regs = bind_data->regs;
+
 	/* Initialize ved and sd */
 	ret = dcmipp_ent_sd_register
-		(&par->ved, &par->sd, v4l2_dev,
+		(&par->ved, &par->sd, bind_data->v4l2_dev,
 		 pdata->entity_name,
 		 MEDIA_ENT_F_VID_IF_BRIDGE, 2,
 		 (const unsigned long[2]) {
@@ -402,8 +404,7 @@ static int dcmipp_par_comp_bind(struct device *comp, struct device *master,
 		  MEDIA_PAD_FL_SOURCE,
 		  },
 		 &dcmipp_par_int_ops, &dcmipp_par_ops,
-		 NULL, NULL,
-		 &par->regs);
+		 NULL, NULL);
 	if (ret)
 		goto err_free_hdl;
 

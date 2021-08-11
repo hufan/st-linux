@@ -76,6 +76,15 @@ struct dcmipp_platform_data {
 	char entity_name[32];
 };
 
+struct dcmipp_bind_data {
+	/* Internal v4l2 parent device*/
+	struct v4l2_device		*v4l2_dev;
+
+	/* Hardware resources */
+	struct reset_control		*rstc;
+	void __iomem			*regs;
+};
+
 /**
  * struct dcmipp_ent_device - core struct that represents a node in the topology
  *
@@ -106,8 +115,6 @@ struct dcmipp_ent_device {
 	struct v4l2_fwnode_bus_parallel	bus;
 	irq_handler_t handler;
 	irq_handler_t thread_fn;
-	void __iomem **regs;
-	struct reset_control **rstc;
 };
 
 /**
@@ -160,8 +167,7 @@ int dcmipp_ent_sd_register(struct dcmipp_ent_device *ved,
 			   const struct v4l2_subdev_internal_ops *sd_int_ops,
 			   const struct v4l2_subdev_ops *sd_ops,
 			   irq_handler_t handler,
-			   irq_handler_t thread_fn,
-			   void __iomem **regs);
+			   irq_handler_t thread_fn);
 
 /**
  * dcmipp_ent_sd_unregister - cleanup and unregister a subdev node
