@@ -406,12 +406,6 @@ static int stm32_dwmac_probe(struct platform_device *pdev)
 		goto err_remove_config_dt;
 	}
 
-	if (stmmac_res.wol_irq && !dwmac->clk_eth_ck) {
-		ret = stm32_dwmac_wake_init(&pdev->dev, &stmmac_res);
-		if (ret)
-			return ret;
-	}
-
 	plat_dat->bsp_priv = dwmac;
 
 	ret = stm32_dwmac_init(plat_dat);
@@ -422,15 +416,18 @@ static int stm32_dwmac_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_clk_disable;
 
+	if (stmmac_res.wol_irq && !dwmac->enable_eth_ck) {
+		ret = stm32_dwmac_wake_init(&pdev->dev, &stmmac_res);
+		if (ret)
+			goto err_clk_disable;
+	}
+
 	return 0;
 
 err_clk_disable:
 	stm32_dwmac_clk_disable(dwmac);
 err_remove_config_dt:
-	dev_pm_clear_wake_irq(&pdev->dev);
-	device_set_wakeup_capable(&pdev->dev, false);
 	stmmac_remove_config_dt(pdev, plat_dat);
-
 	return ret;
 }
 
