@@ -1058,6 +1058,7 @@ static const struct clock_config stm32mp13_clock_cfg[] = {
 	STM32_MGATE_MP1(SAI2, "sai2", "pclk2", 0, GATE_SAI2, SECF_NONE),
 	PCLK(SYSCFG, "syscfg", "pclk3", 0, GATE_SYSCFG, SECF_NONE),
 	PCLK(VREF, "vref", "pclk3", 0, GATE_VREF, SECF_VREF),
+	PCLK(DTS, "dts", "pclk3", 0, GATE_DTS, SECF_NONE),
 	PCLK(PMBCTRL, "pmbctrl", "pclk3", 0, GATE_PMBCTRL, SECF_NONE),
 	PCLK(HDP, "hdp", "pclk3", 0, GATE_HDP, SECF_NONE),
 	PCLK(IWDG2, "iwdg2", "pclk4", 0, GATE_IWDG2APB, SECF_NONE),
@@ -1148,8 +1149,6 @@ static const struct clock_config stm32mp13_clock_cfg[] = {
 	STM32_GATE(DFSDM_K, "dfsdm_k", "ck_mlahb", 0, GATE_DFSDM, SECF_NONE),
 	STM32_GATE(LTDC_PX, "ltdc_px", "pll4_q", CLK_SET_RATE_PARENT,
 		   GATE_LTDC, SECF_NONE),
-
-	STM32_GATE(DTS_K, "dts_k", "ck_lse", 0, GATE_DTS, SECF_NONE),
 
 	STM32_COMPOSITE(ETH1PTP_K, "eth1ptp_k", CLK_OPS_PARENT_ENABLE |
 		  CLK_SET_RATE_NO_REPARENT, SECF_ETH1CK,
