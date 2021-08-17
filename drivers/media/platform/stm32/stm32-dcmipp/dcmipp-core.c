@@ -624,7 +624,7 @@ static int dcmipp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	comp_match = dcmipp_add_subdevs(dcmipp);
-	if (IS_ERR(match))
+	if (IS_ERR(comp_match))
 		return PTR_ERR(comp_match);
 
 	/* Link the media device within the v4l2_device */
