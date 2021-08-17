@@ -525,7 +525,7 @@ static int dcmipp_cap_start_streaming(struct vb2_queue *vq, unsigned int count)
 
 	/* Enable interruptions */
 	vcap->cmier |= DCMIPP_CMIER_P0ALL;
-	reg_write(vcap, DCMIPP_CMIER, vcap->cmier);
+	reg_set(vcap, DCMIPP_CMIER, vcap->cmier);
 
 	/* Snapshot mode */
 	reg_set(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTMODE);
