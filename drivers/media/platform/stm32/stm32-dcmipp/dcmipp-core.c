@@ -108,7 +108,7 @@ struct dcmipp_pipeline_config {
  * Topology Configuration
  */
 
-static const struct dcmipp_ent_config ent_config[] = {
+static const struct dcmipp_ent_config stm32mp13_ent_config[] = {
 	{
 		.name = "dcmipp_parallel",
 		.drv = "dcmipp-parallel",
@@ -127,18 +127,18 @@ static const struct dcmipp_ent_config ent_config[] = {
 #define ID_DUMP_POSTPROC 1
 #define ID_DUMP_CAPTURE 2
 
-static const struct dcmipp_ent_link ent_links[] = {
+static const struct dcmipp_ent_link stm32mp13_ent_links[] = {
 	DCMIPP_ENT_LINK(ID_PARALLEL,      1, ID_DUMP_POSTPROC, 0,
 			MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE),
 	DCMIPP_ENT_LINK(ID_DUMP_POSTPROC, 1, ID_DUMP_CAPTURE,  0,
 			MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE),
 };
 
-static const struct dcmipp_pipeline_config pipe_cfg = {
-	.ents		= ent_config,
-	.num_ents	= ARRAY_SIZE(ent_config),
-	.links		= ent_links,
-	.num_links	= ARRAY_SIZE(ent_links)
+static const struct dcmipp_pipeline_config stm32mp13_pipe_cfg = {
+	.ents		= stm32mp13_ent_config,
+	.num_ents	= ARRAY_SIZE(stm32mp13_ent_config),
+	.links		= stm32mp13_ent_links,
+	.num_links	= ARRAY_SIZE(stm32mp13_ent_links)
 };
 
 /* -------------------------------------------------------------------------- */
@@ -304,7 +304,7 @@ static const struct component_master_ops dcmipp_comp_ops = {
 };
 
 static const struct of_device_id dcmipp_of_match[] = {
-	{ .compatible = "dcmipp"},
+	{ .compatible = "st,stm32mp13-dcmipp", .data = &stm32mp13_pipe_cfg},
 	{ /* end node */ },
 };
 MODULE_DEVICE_TABLE(of, dcmipp_of_match);
@@ -537,18 +537,12 @@ static void dcmipp_dump_hwconfig(struct dcmipp_device *dcmipp)
 static int dcmipp_probe(struct platform_device *pdev)
 {
 	struct dcmipp_device *dcmipp;
-	const struct of_device_id *match = NULL;
 	struct component_match *comp_match = NULL;
 	struct resource *res;
 	struct clk *kclk;
+	const struct dcmipp_pipeline_config *pipe_cfg;
 	int irq;
 	int ret;
-
-	match = of_match_device(of_match_ptr(dcmipp_of_match), &pdev->dev);
-	if (!match) {
-		dev_err(&pdev->dev, "Could not find a match in devicetree\n");
-		return -ENODEV;
-	}
 
 	dev_dbg(&pdev->dev, "probe");
 
@@ -557,7 +551,13 @@ static int dcmipp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	dcmipp->dev = &pdev->dev;
-	dcmipp->pipe_cfg = &pipe_cfg;
+
+	pipe_cfg = of_device_get_match_data(&pdev->dev);
+	if (!pipe_cfg) {
+		dev_err(&pdev->dev, "Can't get device data\n");
+		return -ENODEV;
+	}
+	dcmipp->pipe_cfg = pipe_cfg;
 
 	platform_set_drvdata(pdev, dcmipp);
 
