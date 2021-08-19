@@ -566,12 +566,9 @@ static int dcmipp_probe(struct platform_device *pdev)
 
 	/* Get hardware resources from devicetree */
 	dcmipp->rstc = devm_reset_control_get_exclusive(&pdev->dev, NULL);
-	if (IS_ERR(dcmipp->rstc)) {
-		if (PTR_ERR(dcmipp->rstc) != -EPROBE_DEFER)
-			dev_err(&pdev->dev, "Could not get reset control\n");
-
-		return PTR_ERR(dcmipp->rstc);
-	}
+	if (IS_ERR(dcmipp->rstc))
+		return dev_err_probe(&pdev->dev, PTR_ERR(dcmipp->rstc),
+				     "Could not get reset control\n");
 
 	irq = platform_get_irq(pdev, 0);
 	if (irq <= 0) {
@@ -616,11 +613,9 @@ static int dcmipp_probe(struct platform_device *pdev)
 	}
 
 	kclk = devm_clk_get(&pdev->dev, "kclk");
-	if (IS_ERR(kclk)) {
-		if (PTR_ERR(kclk) != -EPROBE_DEFER)
-			dev_err(&pdev->dev, "Unable to get kclk\n");
-		return PTR_ERR(kclk);
-	}
+	if (IS_ERR(kclk))
+		return dev_err_probe(&pdev->dev, PTR_ERR(kclk),
+				     "Unable to get kclk\n");
 	dcmipp->kclk = kclk;
 
 	spin_lock_init(&dcmipp->irqlock);
