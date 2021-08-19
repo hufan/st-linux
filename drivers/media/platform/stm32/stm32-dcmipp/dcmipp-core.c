@@ -278,8 +278,8 @@ static struct component_match *dcmipp_add_subdevs(struct dcmipp_device *dcmipp)
 				platform_device_unregister(dcmipp->subdevs[i]);
 
 			dev_err(dcmipp->mdev.dev,
-				"%s error (err=%d)\n", __func__,
-				(int)ERR_CAST(match));
+				"%s error (err=%ld)\n", __func__,
+				PTR_ERR(match));
 			return match;
 		}
 
