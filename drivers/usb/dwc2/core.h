@@ -687,6 +687,7 @@ struct dwc2_hw_params {
  * @grxfsiz:		Backup of GRXFSIZ register
  * @gnptxfsiz:		Backup of GNPTXFSIZ register
  * @gi2cctl:		Backup of GI2CCTL register
+ * @ggpio:		Backup of GGPIO register
  * @glpmcfg:		Backup of GLPMCFG register
  * @gdfifocfg:		Backup of GDFIFOCFG register
  * @pcgcctl:		Backup of PCGCCTL register
@@ -703,6 +704,7 @@ struct dwc2_gregs_backup {
 	u32 grxfsiz;
 	u32 gnptxfsiz;
 	u32 gi2cctl;
+	u32 ggpio;
 	u32 glpmcfg;
 	u32 pcgcctl;
 	u32 pcgcctl1;
@@ -863,6 +865,8 @@ struct dwc2_hregs_backup {
  *                      - USB_DR_MODE_HOST
  *                      - USB_DR_MODE_OTG
  * @role_sw:		usb_role_switch handle
+ * @role_sw_default_mode: default operation mode of controller while usb role
+ *			is USB_ROLE_NONE
  * @hcd_enabled:	Host mode sub-driver initialization indicator.
  * @gadget_enabled:	Peripheral mode sub-driver initialization indicator.
  * @ll_hw_enabled:	Status of low-level hardware resources.
@@ -1058,6 +1062,7 @@ struct dwc2_hsotg {
 	enum usb_otg_state op_state;
 	enum usb_dr_mode dr_mode;
 	struct usb_role_switch *role_sw;
+	enum usb_dr_mode role_sw_default_mode;
 	unsigned int hcd_enabled:1;
 	unsigned int gadget_enabled:1;
 	unsigned int ll_hw_enabled:1;
@@ -1331,6 +1336,8 @@ void dwc2_disable_global_interrupts(struct dwc2_hsotg *hcd);
 
 void dwc2_hib_restore_common(struct dwc2_hsotg *hsotg, int rem_wakeup,
 			     int is_host);
+int dwc2_backup_registers(struct dwc2_hsotg *hsotg);
+int dwc2_restore_registers(struct dwc2_hsotg *hsotg);
 int dwc2_backup_global_registers(struct dwc2_hsotg *hsotg);
 int dwc2_restore_global_registers(struct dwc2_hsotg *hsotg);
 
