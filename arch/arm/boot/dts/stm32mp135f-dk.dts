@@ -182,6 +182,10 @@
 	};
 };
 
+&dts {
+	status = "okay";
+};
+
 &eth1 {
 	status = "okay";
 	pinctrl-0 = <&eth1_rmii_pins_a>;
