@@ -450,8 +450,8 @@ static int dcmipp_cap_start_streaming(struct vb2_queue *vq, unsigned int count)
 	vcap->cmier |= DCMIPP_CMIER_PXALL(vcap->pipe_id);
 	reg_write(vcap, DCMIPP_CMIER, vcap->cmier);
 
-	/* Continuous mode */
-	reg_clear(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTMODE);
+	/* Snapshot mode */
+	reg_set(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTMODE);
 
 	/* Enable pipe at the end of programming */
 	reg_set(vcap, DCMIPP_PXFSCR(vcap->pipe_id), DCMIPP_P0FSCR_PIPEN);
@@ -766,6 +766,9 @@ static void dcmipp_cap_prepare_next_frame(struct dcmipp_cap_device *vcap)
 	 * account on next VSYNC (start of next frame)
 	 */
 	reg_write(vcap, DCMIPP_PXPPM0AR1(vcap->pipe_id), buf->paddr);
+
+	/* Capture request */
+	reg_set(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTREQ);
 }
 
 /* irqlock must be held */
@@ -811,6 +814,9 @@ static irqreturn_t dcmipp_cap_irq_thread(int irq, void *arg)
 	if (vcap->cmsr2 & cmsr2_pxovrf) {
 		vcap->overrun_count++;
 		spin_unlock_irq(&vcap->irqlock);
+
+		/* Restart capture */
+		reg_set(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 		return IRQ_HANDLED;
 	}
 
@@ -821,6 +827,9 @@ static irqreturn_t dcmipp_cap_irq_thread(int irq, void *arg)
 		 */
 		vcap->errors_count++;
 		spin_unlock_irq(&vcap->irqlock);
+
+		/* Restart capture */
+		reg_set(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 		return IRQ_HANDLED;
 	}
 
