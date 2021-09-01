@@ -1300,7 +1300,13 @@
 		};
 
 		hash: hash@54003000 {
+			compatible = "st,stm32mp13-hash";
 			reg = <0x54003000 0x400>;
+			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&rcc HASH1>;
+			resets = <&rcc HASH1_R>;
+			dmas = <&mdma 30 0x2 0x1000A02 0x0 0x0 0x0>;
+			dma-names = "in";
 			status = "disabled";
 		};
 
