@@ -281,6 +281,16 @@ static int dcmipp_postproc_configure_scale_crop
 	if (!vpix)
 		return -EINVAL;
 
+	/* clear decimation/crop */
+	reg_clear(ent, DCMIPP_P0PPCR, DCMIPP_P0PPCR_BSM_MASK);
+	reg_clear(ent, DCMIPP_P0PPCR, DCMIPP_P0PPCR_LSM);
+	reg_write(ent, DCMIPP_P0SCSTR, 0);
+	reg_write(ent, DCMIPP_P0SCSZR, 0);
+
+	if (vpix->pixelformat == V4L2_PIX_FMT_JPEG)
+		/* Ignore scale/crop with JPEG */
+		return 0;
+
 	/* decimation */
 	hprediv = postproc->common.sink_fmt.width /
 		  postproc->common.src_fmt.width;
@@ -303,8 +313,8 @@ static int dcmipp_postproc_configure_scale_crop
 		crop.height = postproc->common.src_fmt.height;
 		do_crop = true;
 
-		dev_dbg(postproc->common.dev, "crop to %dx%d [prediv=%dx%d]\n",
-			crop.width, crop.height, 1 << hprediv, 1 << vprediv);
+		dev_dbg(postproc->common.dev, "decimate to %dx%d [prediv=%dx%d]\n",
+			crop.width, crop.height, hprediv, vprediv);
 	}
 
 	if (postproc->do_crop) {
@@ -314,6 +324,9 @@ static int dcmipp_postproc_configure_scale_crop
 	}
 
 	if (do_crop) {
+		dev_dbg(postproc->common.dev, "crop to %dx%d\n",
+			crop.width, crop.height);
+
 		/* expressed in 32-bits words on X axis, lines on Y axis */
 		reg_write(ent, DCMIPP_P0SCSTR,
 			  ((crop.left * vpix->bpp) / 4) | crop.top << 16);
