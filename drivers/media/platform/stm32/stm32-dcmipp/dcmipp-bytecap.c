@@ -401,9 +401,6 @@ static int dcmipp_pipeline_s_stream(struct dcmipp_cap_device *vcap, int state)
 static int dcmipp_start_capture(struct dcmipp_cap_device *vcap,
 				struct dcmipp_buf *buf)
 {
-	struct media_entity *entity = &vcap->vdev.entity;
-	int ret;
-
 	/*
 	 * Set buffer address
 	 * This register is taken into account immediately
@@ -413,6 +410,28 @@ static int dcmipp_start_capture(struct dcmipp_cap_device *vcap,
 	/* Set buffer size */
 	reg_write(vcap, DCMIPP_P0DCLMTR, DCMIPP_P0DCLMTR_ENABLE |
 		  ((buf->size / 4) & DCMIPP_P0DCLMTR_LIMIT_MASK));
+
+	/* Capture request */
+	reg_set(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTREQ);
+
+	return 0;
+}
+
+static int dcmipp_cap_start_streaming(struct vb2_queue *vq, unsigned int count)
+{
+	struct dcmipp_cap_device *vcap = vb2_get_drv_priv(vq);
+	struct media_entity *entity = &vcap->vdev.entity;
+	struct dcmipp_buf *buf, *node;
+	int ret;
+
+	vcap->sequence = 0;
+	vcap->errors_count = 0;
+	vcap->limit_count = 0;
+	vcap->overrun_count = 0;
+	vcap->buffers_count = 0;
+	vcap->vsync_count = 0;
+	vcap->frame_count = 0;
+	vcap->it_count = 0;
 
 	/* Start the media pipeline */
 	ret = media_pipeline_start(entity, &vcap->pipe);
@@ -437,34 +456,9 @@ static int dcmipp_start_capture(struct dcmipp_cap_device *vcap,
 	/* Enable pipe at the end of programming */
 	reg_set(vcap, DCMIPP_PXFSCR(vcap->pipe_id), DCMIPP_P0FSCR_PIPEN);
 
-	/* Capture request */
-	reg_set(vcap, DCMIPP_PXFCTCR(vcap->pipe_id), DCMIPP_P0FCTCR_CPTREQ);
-
-	return 0;
-
-err_media_pipeline_stop:
-	media_pipeline_stop(entity);
-	return ret;
-}
-
-static int dcmipp_cap_start_streaming(struct vb2_queue *vq, unsigned int count)
-{
-	struct dcmipp_cap_device *vcap = vb2_get_drv_priv(vq);
-	struct dcmipp_buf *buf, *node;
-	int ret;
-
-	vcap->sequence = 0;
-	vcap->errors_count = 0;
-	vcap->limit_count = 0;
-	vcap->overrun_count = 0;
-	vcap->buffers_count = 0;
-	vcap->vsync_count = 0;
-	vcap->frame_count = 0;
-	vcap->it_count = 0;
-
 	/*
-	 * Start transfer if at least one buffer has been queued,
-	 * otherwise transfer is deferred at buffer queueing
+	 * Start capture if at least one buffer has been queued,
+	 * otherwise start is deferred at next buffer queueing
 	 */
 	buf = list_first_entry_or_null(&vcap->buffers, typeof(*buf), list);
 	if (!buf) {
@@ -486,6 +480,8 @@ static int dcmipp_cap_start_streaming(struct vb2_queue *vq, unsigned int count)
 
 	return 0;
 
+err_media_pipeline_stop:
+	media_pipeline_stop(entity);
 err_release_buffers:
 	spin_lock_irq(&vcap->irqlock);
 	/*
