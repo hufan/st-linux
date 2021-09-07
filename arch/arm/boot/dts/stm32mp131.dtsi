@@ -510,6 +510,8 @@
 			dma-names = "rx", "tx";
 			st,syscfg-fmp = <&syscfg 0x4 0x1>;
 			i2c-analog-filter;
+			power-domains = <&pd_core_ret>;
+			wakeup-source;
 			status = "disabled";
 		};
 
@@ -528,6 +530,8 @@
 			dma-names = "rx", "tx";
 			st,syscfg-fmp = <&syscfg 0x4 0x2>;
 			i2c-analog-filter;
+			power-domains = <&pd_core_ret>;
+			wakeup-source;
 			status = "disabled";
 		};
 
@@ -953,6 +957,8 @@
 			dma-names = "rx", "tx";
 			st,syscfg-fmp = <&syscfg 0x4 0x4>;
 			i2c-analog-filter;
+			power-domains = <&pd_core_ret>;
+			wakeup-source;
 			status = "disabled";
 		};
 
@@ -971,6 +977,8 @@
 			dma-names = "rx", "tx";
 			st,syscfg-fmp = <&syscfg 0x4 0x8>;
 			i2c-analog-filter;
+			power-domains = <&pd_core_ret>;
+			wakeup-source;
 			status = "disabled";
 		};
 
@@ -989,6 +997,8 @@
 			dma-names = "rx", "tx";
 			st,syscfg-fmp = <&syscfg 0x4 0x10>;
 			i2c-analog-filter;
+			power-domains = <&pd_core_ret>;
+			wakeup-source;
 			status = "disabled";
 		};
 
