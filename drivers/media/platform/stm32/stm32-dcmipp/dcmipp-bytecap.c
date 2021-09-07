@@ -43,6 +43,18 @@ static const struct dcmipp_pix_map dcmipp_capture_pix_map_list[] = {
 		.pixelformat = V4L2_PIX_FMT_SBGGR8,
 	},
 	{
+		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
+		.pixelformat = V4L2_PIX_FMT_SGBRG8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
+		.pixelformat = V4L2_PIX_FMT_SGRBG8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
+		.pixelformat = V4L2_PIX_FMT_SRGGB8,
+	},
+	{
 		.code = MEDIA_BUS_FMT_JPEG_1X8,
 		.pixelformat = V4L2_PIX_FMT_JPEG,
 	},
@@ -140,6 +152,9 @@ static inline int frame_size(u32 width, u32 height, u32 format)
 {
 	switch (format) {
 	case V4L2_PIX_FMT_SBGGR8:
+	case V4L2_PIX_FMT_SGBRG8:
+	case V4L2_PIX_FMT_SGRBG8:
+	case V4L2_PIX_FMT_SRGGB8:
 	case V4L2_PIX_FMT_GREY:
 		return (width * height);
 	case V4L2_PIX_FMT_RGB565:
@@ -156,6 +171,9 @@ static inline int frame_stride(u32 width, u32 format)
 {
 	switch (format) {
 	case V4L2_PIX_FMT_SBGGR8:
+	case V4L2_PIX_FMT_SGBRG8:
+	case V4L2_PIX_FMT_SGRBG8:
+	case V4L2_PIX_FMT_SRGGB8:
 	case V4L2_PIX_FMT_GREY:
 	case V4L2_PIX_FMT_JPEG:
 		return width;
@@ -172,6 +190,9 @@ static inline int hdw_pixel_alignment(u32 format)
 	/* 16 bytes alignment required by hardware */
 	switch (format) {
 	case V4L2_PIX_FMT_SBGGR8:
+	case V4L2_PIX_FMT_SGBRG8:
+	case V4L2_PIX_FMT_SGRBG8:
+	case V4L2_PIX_FMT_SRGGB8:
 	case V4L2_PIX_FMT_GREY:
 	case V4L2_PIX_FMT_JPEG:
 		return 4;/* 2^4 = 16 pixels = 16 bytes */

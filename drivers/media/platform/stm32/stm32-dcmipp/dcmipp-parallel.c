@@ -40,6 +40,15 @@ static const struct dcmipp_pix_map dcmipp_par_sink_pix_map_list[] = {
 		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
 	},
 	{
+		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
+	},
+	{
 		.code = MEDIA_BUS_FMT_JPEG_1X8,
 	},
 };
@@ -68,6 +77,24 @@ static const struct dcmipp_pix_map dcmipp_par_src_pix_map_list[] = {
 	{
 		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
 		.pixelformat = V4L2_PIX_FMT_SBGGR8,
+		.bpp = 1,
+		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
+		.pixelformat = V4L2_PIX_FMT_SGBRG8,
+		.bpp = 1,
+		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
+		.pixelformat = V4L2_PIX_FMT_SGRBG8,
+		.bpp = 1,
+		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
+	},
+	{
+		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
+		.pixelformat = V4L2_PIX_FMT_SRGGB8,
 		.bpp = 1,
 		.prcr_format = DCMIPP_PRCR_FORMAT_RAW8,
 	},
