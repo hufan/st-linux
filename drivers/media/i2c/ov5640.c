@@ -219,7 +219,6 @@ struct ov5640_ctrls {
 	struct v4l2_ctrl *test_pattern;
 	struct v4l2_ctrl *hflip;
 	struct v4l2_ctrl *vflip;
-	struct v4l2_ctrl *link_freq;
 };
 
 struct ov5640_dev {
@@ -2308,10 +2307,6 @@ static int ov5640_try_fmt_internal(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static const s64 link_freq_menu_items[] = {
-	384000000,
-};
-
 static int ov5640_set_fmt(struct v4l2_subdev *sd,
 			  struct v4l2_subdev_pad_config *cfg,
 			  struct v4l2_subdev_format *format)
@@ -2752,8 +2747,6 @@ static int ov5640_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_VFLIP:
 		ret = ov5640_set_ctrl_vflip(sensor, ctrl->val);
 		break;
-	case V4L2_CID_LINK_FREQ:
-		return 0;
 	default:
 		ret = -EINVAL;
 		break;
@@ -2825,9 +2818,6 @@ static int ov5640_init_controls(struct ov5640_dev *sensor)
 				       V4L2_CID_POWER_LINE_FREQUENCY,
 				       V4L2_CID_POWER_LINE_FREQUENCY_AUTO, 0,
 				       V4L2_CID_POWER_LINE_FREQUENCY_50HZ);
-
-	ctrls->link_freq = v4l2_ctrl_new_int_menu(hdl, ops, V4L2_CID_LINK_FREQ,
-						  0, 0, link_freq_menu_items);
 
 	if (hdl->error) {
 		ret = hdl->error;
