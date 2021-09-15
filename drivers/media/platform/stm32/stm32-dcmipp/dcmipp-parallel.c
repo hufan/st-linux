@@ -34,6 +34,9 @@ static const struct dcmipp_pix_map dcmipp_par_sink_pix_map_list[] = {
 		.code = MEDIA_BUS_FMT_YUYV8_2X8,
 	},
 	{
+		.code = MEDIA_BUS_FMT_UYVY8_2X8,
+	},
+	{
 		.code = MEDIA_BUS_FMT_Y8_1X8,
 	},
 	{
@@ -64,6 +67,13 @@ static const struct dcmipp_pix_map dcmipp_par_src_pix_map_list[] = {
 	{
 		.code = MEDIA_BUS_FMT_YUYV8_2X8,
 		.pixelformat = V4L2_PIX_FMT_YUYV,
+		.bpp = 2,
+		.prcr_format = DCMIPP_PRCR_FORMAT_YUV422,
+		.prcr_swapcycles = 1,
+	},
+	{
+		.code = MEDIA_BUS_FMT_UYVY8_2X8,
+		.pixelformat = V4L2_PIX_FMT_UYVY,
 		.bpp = 2,
 		.prcr_format = DCMIPP_PRCR_FORMAT_YUV422,
 		.prcr_swapcycles = 1,
