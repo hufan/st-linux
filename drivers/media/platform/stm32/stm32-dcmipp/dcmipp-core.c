@@ -124,13 +124,13 @@ static const struct dcmipp_ent_config stm32mp13_ent_config[] = {
 };
 
 #define ID_PARALLEL 0
-#define ID_DUMP_POSTPROC 1
+#define ID_DUMP_BYTEPROC 1
 #define ID_DUMP_CAPTURE 2
 
 static const struct dcmipp_ent_link stm32mp13_ent_links[] = {
-	DCMIPP_ENT_LINK(ID_PARALLEL,      1, ID_DUMP_POSTPROC, 0,
+	DCMIPP_ENT_LINK(ID_PARALLEL,      1, ID_DUMP_BYTEPROC, 0,
 			MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE),
-	DCMIPP_ENT_LINK(ID_DUMP_POSTPROC, 1, ID_DUMP_CAPTURE,  0,
+	DCMIPP_ENT_LINK(ID_DUMP_BYTEPROC, 1, ID_DUMP_CAPTURE,  0,
 			MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE),
 };
 

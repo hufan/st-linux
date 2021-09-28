@@ -20,7 +20,7 @@
 
 #include "dcmipp-common.h"
 
-#define DCMIPP_POSTPROC_DRV_NAME "dcmipp-byteproc"
+#define DCMIPP_BYTEPROC_DRV_NAME "dcmipp-byteproc"
 
 #define DCMIPP_FMT_WIDTH_DEFAULT  640
 #define DCMIPP_FMT_HEIGHT_DEFAULT 480
@@ -44,9 +44,9 @@
 #define IS_SRC(pad)  ((pad))
 #define PAD_STR(pad) (IS_SRC((pad))) ? "src" : "sink"
 
-#define POSTPROC_MEDIA_BUS_FMT_DEFAULT MEDIA_BUS_FMT_RGB565_2X8_LE
+#define BYTEPROC_MEDIA_BUS_FMT_DEFAULT MEDIA_BUS_FMT_RGB565_2X8_LE
 
-struct dcmipp_postproc_pix_map {
+struct dcmipp_byteproc_pix_map {
 	unsigned int code;
 	unsigned int bpp;
 };
@@ -56,7 +56,7 @@ struct dcmipp_postproc_pix_map {
 			.code = MEDIA_BUS_FMT_##mbus,		\
 			.bpp = byteperpixel,	\
 		}
-static const struct dcmipp_postproc_pix_map dcmipp_postproc_pix_map_list[] = {
+static const struct dcmipp_byteproc_pix_map dcmipp_byteproc_pix_map_list[] = {
 	PIXMAP_MBUS_BPP(RGB565_2X8_LE, 2),
 	PIXMAP_MBUS_BPP(YUYV8_2X8, 2),
 	PIXMAP_MBUS_BPP(YVYU8_2X8, 2),
@@ -70,10 +70,10 @@ static const struct dcmipp_postproc_pix_map dcmipp_postproc_pix_map_list[] = {
 	PIXMAP_MBUS_BPP(JPEG_1X8, 1),
 };
 
-static const struct dcmipp_postproc_pix_map *dcmipp_postproc_pix_map_by_index(unsigned int i)
+static const struct dcmipp_byteproc_pix_map *dcmipp_byteproc_pix_map_by_index(unsigned int i)
 {
-	const struct dcmipp_postproc_pix_map *l = dcmipp_postproc_pix_map_list;
-	unsigned int size = ARRAY_SIZE(dcmipp_postproc_pix_map_list);
+	const struct dcmipp_byteproc_pix_map *l = dcmipp_byteproc_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_byteproc_pix_map_list);
 
 	if (i >= size)
 		return NULL;
@@ -81,10 +81,10 @@ static const struct dcmipp_postproc_pix_map *dcmipp_postproc_pix_map_by_index(un
 	return &l[i];
 }
 
-static const struct dcmipp_postproc_pix_map *dcmipp_postproc_pix_map_by_code(u32 code)
+static const struct dcmipp_byteproc_pix_map *dcmipp_byteproc_pix_map_by_code(u32 code)
 {
-	const struct dcmipp_postproc_pix_map *l = dcmipp_postproc_pix_map_list;
-	unsigned int size = ARRAY_SIZE(dcmipp_postproc_pix_map_list);
+	const struct dcmipp_byteproc_pix_map *l = dcmipp_byteproc_pix_map_list;
+	unsigned int size = ARRAY_SIZE(dcmipp_byteproc_pix_map_list);
 	unsigned int i;
 
 	for (i = 0; i < size; i++) {
@@ -95,7 +95,7 @@ static const struct dcmipp_postproc_pix_map *dcmipp_postproc_pix_map_by_code(u32
 	return NULL;
 }
 
-struct dcmipp_postproc_device {
+struct dcmipp_byteproc_device {
 	struct dcmipp_ent_device ved;
 	struct v4l2_subdev sd;
 	struct device *dev;
@@ -117,7 +117,7 @@ struct dcmipp_postproc_device {
 static const struct v4l2_mbus_framefmt fmt_default = {
 	.width = DCMIPP_FMT_WIDTH_DEFAULT,
 	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
-	.code = POSTPROC_MEDIA_BUS_FMT_DEFAULT,
+	.code = BYTEPROC_MEDIA_BUS_FMT_DEFAULT,
 	.field = V4L2_FIELD_NONE,
 	.colorspace = V4L2_COLORSPACE_DEFAULT,
 };
@@ -137,7 +137,7 @@ static const struct v4l2_rect crop_min = {
 };
 
 static struct v4l2_rect
-dcmipp_postproc_get_crop_bound(const struct v4l2_mbus_framefmt *fmt)
+dcmipp_byteproc_get_crop_bound(const struct v4l2_mbus_framefmt *fmt)
 {
 	/* Get the crop bounds to clamp the crop rectangle correctly */
 	struct v4l2_rect r = {
@@ -149,18 +149,18 @@ dcmipp_postproc_get_crop_bound(const struct v4l2_mbus_framefmt *fmt)
 	return r;
 }
 
-static void dcmipp_postproc_adjust_crop(struct v4l2_rect *r,
+static void dcmipp_byteproc_adjust_crop(struct v4l2_rect *r,
 					const struct v4l2_mbus_framefmt *fmt)
 {
 	const struct v4l2_rect src_rect =
-		dcmipp_postproc_get_crop_bound(fmt);
+		dcmipp_byteproc_get_crop_bound(fmt);
 
 	/* Disallow rectangles smaller than the minimal one. */
 	v4l2_rect_set_min_size(r, &crop_min);
 	v4l2_rect_map_inside(r, &src_rect);
 }
 
-static void dcmipp_postproc_adjust_src_fmt(struct v4l2_mbus_framefmt *src_fmt,
+static void dcmipp_byteproc_adjust_src_fmt(struct v4l2_mbus_framefmt *src_fmt,
 					   struct v4l2_mbus_framefmt *sink_fmt)
 {
 	/* Can only divide by 2 in width or height */
@@ -175,12 +175,12 @@ static void dcmipp_postproc_adjust_src_fmt(struct v4l2_mbus_framefmt *src_fmt,
 		src_fmt->height = sink_fmt->height;
 }
 
-static void dcmipp_postproc_adjust_fmt(struct v4l2_mbus_framefmt *fmt, u32 pad)
+static void dcmipp_byteproc_adjust_fmt(struct v4l2_mbus_framefmt *fmt, u32 pad)
 {
-	const struct dcmipp_postproc_pix_map *vpix;
+	const struct dcmipp_byteproc_pix_map *vpix;
 
 	/* Only accept code in the pix map table */
-	vpix = dcmipp_postproc_pix_map_by_code(fmt->code);
+	vpix = dcmipp_byteproc_pix_map_by_code(fmt->code);
 	if (!vpix)
 		fmt->code = fmt_default.code;
 
@@ -195,7 +195,7 @@ static void dcmipp_postproc_adjust_fmt(struct v4l2_mbus_framefmt *fmt, u32 pad)
 	dcmipp_colorimetry_clamp(fmt);
 }
 
-static int dcmipp_postproc_init_cfg(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_init_cfg(struct v4l2_subdev *sd,
 				    struct v4l2_subdev_pad_config *cfg)
 {
 	unsigned int i;
@@ -210,13 +210,13 @@ static int dcmipp_postproc_init_cfg(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int dcmipp_postproc_enum_mbus_code(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_enum_mbus_code(struct v4l2_subdev *sd,
 					  struct v4l2_subdev_pad_config *cfg,
 					  struct v4l2_subdev_mbus_code_enum *code)
 {
-	const struct dcmipp_postproc_pix_map *vpix;
+	const struct dcmipp_byteproc_pix_map *vpix;
 
-	vpix = dcmipp_postproc_pix_map_by_index(code->index);
+	vpix = dcmipp_byteproc_pix_map_by_index(code->index);
 	if (!vpix)
 		return -EINVAL;
 
@@ -225,17 +225,17 @@ static int dcmipp_postproc_enum_mbus_code(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int dcmipp_postproc_enum_frame_size(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_enum_frame_size(struct v4l2_subdev *sd,
 					   struct v4l2_subdev_pad_config *cfg,
 					   struct v4l2_subdev_frame_size_enum *fse)
 {
-	const struct dcmipp_postproc_pix_map *vpix;
+	const struct dcmipp_byteproc_pix_map *vpix;
 
 	if (fse->index)
 		return -EINVAL;
 
 	/* Only accept code in the pix map table */
-	vpix = dcmipp_postproc_pix_map_by_code(fse->code);
+	vpix = dcmipp_byteproc_pix_map_by_code(fse->code);
 	if (!vpix)
 		return -EINVAL;
 
@@ -247,60 +247,60 @@ static int dcmipp_postproc_enum_frame_size(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int dcmipp_postproc_get_fmt(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_get_fmt(struct v4l2_subdev *sd,
 		   struct v4l2_subdev_pad_config *cfg,
 		   struct v4l2_subdev_format *fmt)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 
-	mutex_lock(&postproc->lock);
+	mutex_lock(&byteproc->lock);
 
 	if (IS_SINK(fmt->pad))
 		fmt->format = fmt->which == V4L2_SUBDEV_FORMAT_TRY ?
 			      *v4l2_subdev_get_try_format(sd, cfg, 0) :
-			      postproc->sink_fmt;
+			      byteproc->sink_fmt;
 	else
 		fmt->format = fmt->which == V4L2_SUBDEV_FORMAT_TRY ?
 			      *v4l2_subdev_get_try_format(sd, cfg, 0) :
-			      postproc->src_fmt;
+			      byteproc->src_fmt;
 
-	mutex_unlock(&postproc->lock);
+	mutex_unlock(&byteproc->lock);
 
 	return 0;
 }
-static int dcmipp_postproc_set_fmt(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_set_fmt(struct v4l2_subdev *sd,
 				   struct v4l2_subdev_pad_config *cfg,
 				   struct v4l2_subdev_format *fmt)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 	struct v4l2_mbus_framefmt *pad_fmt;
 	int ret = 0;
 
-	mutex_lock(&postproc->lock);
+	mutex_lock(&byteproc->lock);
 
 	if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		if (postproc->streaming) {
+		if (byteproc->streaming) {
 			ret = -EBUSY;
 			goto out;
 		}
 
 		if (IS_SINK(fmt->pad))
-			pad_fmt = &postproc->sink_fmt;
+			pad_fmt = &byteproc->sink_fmt;
 		else
-			pad_fmt = &postproc->src_fmt;
+			pad_fmt = &byteproc->src_fmt;
 
 	} else {
 		pad_fmt = v4l2_subdev_get_try_format(sd, cfg, 0);
 	}
 
-	dcmipp_postproc_adjust_fmt(&fmt->format, fmt->pad);
+	dcmipp_byteproc_adjust_fmt(&fmt->format, fmt->pad);
 
 	if (IS_SRC(fmt->pad))
-		dcmipp_postproc_adjust_src_fmt(&fmt->format,
-					       &postproc->sink_fmt);
+		dcmipp_byteproc_adjust_src_fmt(&fmt->format,
+					       &byteproc->sink_fmt);
 
-	dev_dbg(postproc->dev, "%s: %s format update: old:%dx%d (0x%x, %d, %d, %d, %d) new:%dx%d (0x%x, %d, %d, %d, %d)\n",
-		postproc->sd.name,
+	dev_dbg(byteproc->dev, "%s: %s format update: old:%dx%d (0x%x, %d, %d, %d, %d) new:%dx%d (0x%x, %d, %d, %d, %d)\n",
+		byteproc->sd.name,
 		PAD_STR(fmt->pad),
 		/* old */
 		pad_fmt->width, pad_fmt->height, pad_fmt->code,
@@ -314,16 +314,16 @@ static int dcmipp_postproc_set_fmt(struct v4l2_subdev *sd,
 	*pad_fmt = fmt->format;
 
 out:
-	mutex_unlock(&postproc->lock);
+	mutex_unlock(&byteproc->lock);
 
 	return ret;
 }
 
-static int dcmipp_postproc_get_selection(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_get_selection(struct v4l2_subdev *sd,
 					 struct v4l2_subdev_pad_config *cfg,
 					 struct v4l2_subdev_selection *s)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 	struct v4l2_mbus_framefmt *sink_fmt;
 	struct v4l2_rect *crop;
 
@@ -331,8 +331,8 @@ static int dcmipp_postproc_get_selection(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (s->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		sink_fmt = &postproc->sink_fmt;
-		crop = &postproc->crop;
+		sink_fmt = &byteproc->sink_fmt;
+		crop = &byteproc->crop;
 	} else {
 		sink_fmt = v4l2_subdev_get_try_format(sd, cfg, 0);
 		crop = v4l2_subdev_get_try_crop(sd, cfg, 0);
@@ -344,7 +344,7 @@ static int dcmipp_postproc_get_selection(struct v4l2_subdev *sd,
 		break;
 	case V4L2_SEL_TGT_CROP_BOUNDS:
 	case V4L2_SEL_TGT_CROP_DEFAULT:
-		s->r = dcmipp_postproc_get_crop_bound(sink_fmt);
+		s->r = dcmipp_byteproc_get_crop_bound(sink_fmt);
 		break;
 	default:
 		return -EINVAL;
@@ -353,11 +353,11 @@ static int dcmipp_postproc_get_selection(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int dcmipp_postproc_set_selection(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_set_selection(struct v4l2_subdev *sd,
 					 struct v4l2_subdev_pad_config *cfg,
 					 struct v4l2_subdev_selection *s)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 	struct v4l2_mbus_framefmt *sink_fmt;
 	struct v4l2_rect *crop;
 	bool _do_crop;
@@ -367,9 +367,9 @@ static int dcmipp_postproc_set_selection(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (s->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		sink_fmt = &postproc->sink_fmt;
-		crop = &postproc->crop;
-		do_crop = &postproc->do_crop;
+		sink_fmt = &byteproc->sink_fmt;
+		crop = &byteproc->crop;
+		do_crop = &byteproc->do_crop;
 	} else {
 		sink_fmt = v4l2_subdev_get_try_format(sd, cfg, 0);
 		crop = v4l2_subdev_get_try_crop(sd, cfg, 0);
@@ -378,12 +378,12 @@ static int dcmipp_postproc_set_selection(struct v4l2_subdev *sd,
 
 	switch (s->target) {
 	case V4L2_SEL_TGT_CROP:
-		dcmipp_postproc_adjust_crop(&s->r, sink_fmt);
+		dcmipp_byteproc_adjust_crop(&s->r, sink_fmt);
 
 		*crop = s->r;
 		*do_crop = true;
 
-		dev_dbg(postproc->dev, "s_selection: crop %ux%u@(%u,%u)\n",
+		dev_dbg(byteproc->dev, "s_selection: crop %ux%u@(%u,%u)\n",
 			crop->width, crop->height, crop->left, crop->top);
 		break;
 	default:
@@ -393,81 +393,81 @@ static int dcmipp_postproc_set_selection(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static const struct v4l2_subdev_pad_ops dcmipp_postproc_pad_ops = {
-	.init_cfg		= dcmipp_postproc_init_cfg,
-	.enum_mbus_code		= dcmipp_postproc_enum_mbus_code,
-	.enum_frame_size	= dcmipp_postproc_enum_frame_size,
-	.get_fmt		= dcmipp_postproc_get_fmt,
-	.set_fmt		= dcmipp_postproc_set_fmt,
-	.get_selection		= dcmipp_postproc_get_selection,
-	.set_selection		= dcmipp_postproc_set_selection,
+static const struct v4l2_subdev_pad_ops dcmipp_byteproc_pad_ops = {
+	.init_cfg		= dcmipp_byteproc_init_cfg,
+	.enum_mbus_code		= dcmipp_byteproc_enum_mbus_code,
+	.enum_frame_size	= dcmipp_byteproc_enum_frame_size,
+	.get_fmt		= dcmipp_byteproc_get_fmt,
+	.set_fmt		= dcmipp_byteproc_set_fmt,
+	.get_selection		= dcmipp_byteproc_get_selection,
+	.set_selection		= dcmipp_byteproc_set_selection,
 };
 
-static int dcmipp_postproc_configure_scale_crop
-			(struct dcmipp_postproc_device *postproc)
+static int dcmipp_byteproc_configure_scale_crop
+			(struct dcmipp_byteproc_device *byteproc)
 {
-	const struct dcmipp_postproc_pix_map *vpix;
+	const struct dcmipp_byteproc_pix_map *vpix;
 	u32 hprediv, vprediv;
 	struct v4l2_rect crop;
 	bool do_crop = false;
 	u32 val = 0;
 
 	/* find output format bpp */
-	vpix = dcmipp_postproc_pix_map_by_code(postproc->src_fmt.code);
+	vpix = dcmipp_byteproc_pix_map_by_code(byteproc->src_fmt.code);
 	if (!vpix)
 		return -EINVAL;
 
 	/* clear decimation/crop */
-	reg_clear(postproc, DCMIPP_P0PPCR, DCMIPP_P0PPCR_BSM_MASK);
-	reg_clear(postproc, DCMIPP_P0PPCR, DCMIPP_P0PPCR_LSM);
-	reg_write(postproc, DCMIPP_P0SCSTR, 0);
-	reg_write(postproc, DCMIPP_P0SCSZR, 0);
+	reg_clear(byteproc, DCMIPP_P0PPCR, DCMIPP_P0PPCR_BSM_MASK);
+	reg_clear(byteproc, DCMIPP_P0PPCR, DCMIPP_P0PPCR_LSM);
+	reg_write(byteproc, DCMIPP_P0SCSTR, 0);
+	reg_write(byteproc, DCMIPP_P0SCSZR, 0);
 
 	if (vpix->code == MEDIA_BUS_FMT_JPEG_1X8)
 		/* Ignore scale/crop with JPEG */
 		return 0;
 
 	/* decimation */
-	hprediv = postproc->sink_fmt.width /
-		  postproc->src_fmt.width;
+	hprediv = byteproc->sink_fmt.width /
+		  byteproc->src_fmt.width;
 	if (hprediv == 2)
 		val |= DCMIPP_P0PPCR_BSM_2_4 << DCMIPP_P0PPCR_BSM_SHIFT;
 
-	vprediv = postproc->sink_fmt.height /
-		  postproc->src_fmt.height;
+	vprediv = byteproc->sink_fmt.height /
+		  byteproc->src_fmt.height;
 	if (vprediv == 2)
 		val |= DCMIPP_P0PPCR_LSM;/* one line out of two */
 
 	if (val) {
 		/* decimate using bytes and lines skipping */
-		reg_set(postproc, DCMIPP_P0PPCR, val);
+		reg_set(byteproc, DCMIPP_P0PPCR, val);
 
 		/* crop to decimated resolution */
 		crop.top = 0;
 		crop.left = 0;
-		crop.width = postproc->src_fmt.width;
-		crop.height = postproc->src_fmt.height;
+		crop.width = byteproc->src_fmt.width;
+		crop.height = byteproc->src_fmt.height;
 		do_crop = true;
 
-		dev_dbg(postproc->dev, "decimate to %dx%d [prediv=%dx%d]\n",
+		dev_dbg(byteproc->dev, "decimate to %dx%d [prediv=%dx%d]\n",
 			crop.width, crop.height, hprediv, vprediv);
 	}
 
-	if (postproc->do_crop) {
+	if (byteproc->do_crop) {
 		/* explicit crop superseed default crop */
-		crop = postproc->crop;
+		crop = byteproc->crop;
 		do_crop = true;
 	}
 
 	if (do_crop) {
-		dev_dbg(postproc->dev, "crop to %dx%d\n",
+		dev_dbg(byteproc->dev, "crop to %dx%d\n",
 			crop.width, crop.height);
 
 		/* expressed in 32-bits words on X axis, lines on Y axis */
-		reg_write(postproc, DCMIPP_P0SCSTR,
+		reg_write(byteproc, DCMIPP_P0SCSTR,
 			  (((crop.left * vpix->bpp) / 4) << DCMIPP_P0SCSTR_HSTART_SHIFT) |
 			  (crop.top << DCMIPP_P0SCSTR_VSTART_SHIFT));
-		reg_write(postproc, DCMIPP_P0SCSZR,
+		reg_write(byteproc, DCMIPP_P0SCSZR,
 			  DCMIPP_P0SCSZR_ENABLE |
 			  (((crop.width * vpix->bpp) / 4) << DCMIPP_P0SCSZR_HSIZE_SHIFT) |
 			  (crop.height << DCMIPP_P0SCSZR_VSIZE_SHIFT));
@@ -476,146 +476,146 @@ static int dcmipp_postproc_configure_scale_crop
 	return 0;
 }
 
-static void dcmipp_postproc_configure_framerate
-			(struct dcmipp_postproc_device *postproc)
+static void dcmipp_byteproc_configure_framerate
+			(struct dcmipp_byteproc_device *byteproc)
 {
 	/* Frame skipping */
-	reg_clear(postproc, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_FRATE_MASK);
-	reg_set(postproc, DCMIPP_P0FCTCR, postproc->frate);
+	reg_clear(byteproc, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_FRATE_MASK);
+	reg_set(byteproc, DCMIPP_P0FCTCR, byteproc->frate);
 }
 
-static int dcmipp_postproc_g_frame_interval(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_g_frame_interval(struct v4l2_subdev *sd,
 					    struct v4l2_subdev_frame_interval *fi)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 
 	if (IS_SINK(fi->pad)) {
-		fi->interval = postproc->sink_interval;
+		fi->interval = byteproc->sink_interval;
 	} else {
-		fi->interval.numerator = postproc->sink_interval.numerator;
+		fi->interval.numerator = byteproc->sink_interval.numerator;
 		fi->interval.denominator =
-			postproc->sink_interval.denominator /
-			(1 << postproc->frate);
+			byteproc->sink_interval.denominator /
+			(1 << byteproc->frate);
 	}
 
 	return 0;
 }
 
-static int dcmipp_postproc_s_frame_interval(struct v4l2_subdev *sd,
+static int dcmipp_byteproc_s_frame_interval(struct v4l2_subdev *sd,
 					    struct v4l2_subdev_frame_interval *fi)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 
-	mutex_lock(&postproc->lock);
+	mutex_lock(&byteproc->lock);
 
-	if (postproc->streaming) {
-		mutex_unlock(&postproc->lock);
+	if (byteproc->streaming) {
+		mutex_unlock(&byteproc->lock);
 		return -EBUSY;
 	}
 
 	if (IS_SINK(fi->pad)) {
-		postproc->sink_interval = fi->interval;
+		byteproc->sink_interval = fi->interval;
 	} else {
 		if (fi->interval.denominator >=
-		    postproc->sink_interval.denominator) {
-			postproc->frate = 0;
+		    byteproc->sink_interval.denominator) {
+			byteproc->frate = 0;
 		} else {
 			if (fi->interval.denominator <=
-			   (postproc->sink_interval.denominator / 8))
-				postproc->frate = 3;
+			   (byteproc->sink_interval.denominator / 8))
+				byteproc->frate = 3;
 			else if (fi->interval.denominator <=
-			   (postproc->sink_interval.denominator / 4))
-				postproc->frate = 2;
+			   (byteproc->sink_interval.denominator / 4))
+				byteproc->frate = 2;
 			else if (fi->interval.denominator <=
-			   (postproc->sink_interval.denominator / 2))
-				postproc->frate = 1;
+			   (byteproc->sink_interval.denominator / 2))
+				byteproc->frate = 1;
 		}
 	}
 
-	mutex_unlock(&postproc->lock);
+	mutex_unlock(&byteproc->lock);
 
 	return 0;
 }
 
 #define STOP_TIMEOUT_US 1000
 #define POLL_INTERVAL_US  50
-static int dcmipp_postproc_s_stream(struct v4l2_subdev *sd, int enable)
+static int dcmipp_byteproc_s_stream(struct v4l2_subdev *sd, int enable)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
-	mutex_lock(&postproc->lock);
+	mutex_lock(&byteproc->lock);
 	if (enable) {
-		/* Postproc subdev do not support different format at sink/src */
-		if (postproc->sink_fmt.code != postproc->src_fmt.code) {
-			dev_err(postproc->dev, "Sink & Src format differ\n");
+		/* Byteproc subdev do not support different format at sink/src */
+		if (byteproc->sink_fmt.code != byteproc->src_fmt.code) {
+			dev_err(byteproc->dev, "Sink & Src format differ\n");
 			ret = -EPIPE;
 			goto err;
 		}
 
-		dcmipp_postproc_configure_framerate(postproc);
+		dcmipp_byteproc_configure_framerate(byteproc);
 
-		ret = dcmipp_postproc_configure_scale_crop(postproc);
+		ret = dcmipp_byteproc_configure_scale_crop(byteproc);
 		if (ret)
 			goto err;
 	}
 
 err:
-	mutex_unlock(&postproc->lock);
+	mutex_unlock(&byteproc->lock);
 
 	return ret;
 }
 
-static const struct v4l2_subdev_video_ops dcmipp_postproc_video_ops = {
-	.g_frame_interval = dcmipp_postproc_g_frame_interval,
-	.s_frame_interval = dcmipp_postproc_s_frame_interval,
-	.s_stream = dcmipp_postproc_s_stream,
+static const struct v4l2_subdev_video_ops dcmipp_byteproc_video_ops = {
+	.g_frame_interval = dcmipp_byteproc_g_frame_interval,
+	.s_frame_interval = dcmipp_byteproc_s_frame_interval,
+	.s_stream = dcmipp_byteproc_s_stream,
 };
 
-static const struct v4l2_subdev_ops dcmipp_postproc_ops = {
-	.pad = &dcmipp_postproc_pad_ops,
-	.video = &dcmipp_postproc_video_ops,
+static const struct v4l2_subdev_ops dcmipp_byteproc_ops = {
+	.pad = &dcmipp_byteproc_pad_ops,
+	.video = &dcmipp_byteproc_video_ops,
 };
 
 /* FIXME */
-static void dcmipp_postproc_release(struct v4l2_subdev *sd)
+static void dcmipp_byteproc_release(struct v4l2_subdev *sd)
 {
-	struct dcmipp_postproc_device *postproc = v4l2_get_subdevdata(sd);
+	struct dcmipp_byteproc_device *byteproc = v4l2_get_subdevdata(sd);
 
-	kfree(postproc);
+	kfree(byteproc);
 }
 
-static const struct v4l2_subdev_internal_ops dcmipp_postproc_int_ops = {
-	.release = dcmipp_postproc_release,
+static const struct v4l2_subdev_internal_ops dcmipp_byteproc_int_ops = {
+	.release = dcmipp_byteproc_release,
 };
 
-static void dcmipp_postproc_comp_unbind(struct device *comp, struct device *master,
+static void dcmipp_byteproc_comp_unbind(struct device *comp, struct device *master,
 					void *master_data)
 {
 	struct dcmipp_ent_device *ved = dev_get_drvdata(comp);
-	struct dcmipp_postproc_device *postproc =
-			container_of(ved, struct dcmipp_postproc_device, ved);
+	struct dcmipp_byteproc_device *byteproc =
+			container_of(ved, struct dcmipp_byteproc_device, ved);
 
-	dcmipp_ent_sd_unregister(ved, &postproc->sd);
+	dcmipp_ent_sd_unregister(ved, &byteproc->sd);
 }
 
-static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
+static int dcmipp_byteproc_comp_bind(struct device *comp, struct device *master,
 				     void *master_data)
 {
 	struct dcmipp_bind_data *bind_data = master_data;
 	struct dcmipp_platform_data *pdata = comp->platform_data;
-	struct dcmipp_postproc_device *postproc;
+	struct dcmipp_byteproc_device *byteproc;
 	int ret;
 
-	/* Allocate the postproc struct */
-	postproc = kzalloc(sizeof(*postproc), GFP_KERNEL);
-	if (!postproc)
+	/* Allocate the byteproc struct */
+	byteproc = kzalloc(sizeof(*byteproc), GFP_KERNEL);
+	if (!byteproc)
 		return -ENOMEM;
 
-	postproc->regs = bind_data->regs;
+	byteproc->regs = bind_data->regs;
 
 	/* Initialize ved and sd */
-	ret = dcmipp_ent_sd_register(&postproc->ved, &postproc->sd,
+	ret = dcmipp_ent_sd_register(&byteproc->ved, &byteproc->sd,
 				     bind_data->v4l2_dev,
 				     pdata->entity_name,
 				     MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER, 2,
@@ -623,58 +623,58 @@ static int dcmipp_postproc_comp_bind(struct device *comp, struct device *master,
 				     MEDIA_PAD_FL_SINK,
 				     MEDIA_PAD_FL_SOURCE,
 				     },
-				     &dcmipp_postproc_int_ops, &dcmipp_postproc_ops,
+				     &dcmipp_byteproc_int_ops, &dcmipp_byteproc_ops,
 				     NULL, NULL);
 	if (ret) {
-		kfree(postproc);
+		kfree(byteproc);
 		return ret;
 	}
 
-	dev_set_drvdata(comp, &postproc->ved);
-	postproc->dev = comp;
+	dev_set_drvdata(comp, &byteproc->ved);
+	byteproc->dev = comp;
 
 	/* Initialize the frame format */
-	postproc->sink_fmt = postproc->src_fmt = fmt_default;
+	byteproc->sink_fmt = byteproc->src_fmt = fmt_default;
 
 	return 0;
 }
 
-static const struct component_ops dcmipp_postproc_comp_ops = {
-	.bind = dcmipp_postproc_comp_bind,
-	.unbind = dcmipp_postproc_comp_unbind,
+static const struct component_ops dcmipp_byteproc_comp_ops = {
+	.bind = dcmipp_byteproc_comp_bind,
+	.unbind = dcmipp_byteproc_comp_unbind,
 };
 
-static int dcmipp_postproc_probe(struct platform_device *pdev)
+static int dcmipp_byteproc_probe(struct platform_device *pdev)
 {
-	return component_add(&pdev->dev, &dcmipp_postproc_comp_ops);
+	return component_add(&pdev->dev, &dcmipp_byteproc_comp_ops);
 }
 
-static int dcmipp_postproc_remove(struct platform_device *pdev)
+static int dcmipp_byteproc_remove(struct platform_device *pdev)
 {
-	component_del(&pdev->dev, &dcmipp_postproc_comp_ops);
+	component_del(&pdev->dev, &dcmipp_byteproc_comp_ops);
 
 	return 0;
 }
 
-static const struct platform_device_id dcmipp_postproc_driver_ids[] = {
+static const struct platform_device_id dcmipp_byteproc_driver_ids[] = {
 	{
-		.name           = DCMIPP_POSTPROC_DRV_NAME,
+		.name           = DCMIPP_BYTEPROC_DRV_NAME,
 	},
 	{ }
 };
 
-static struct platform_driver dcmipp_postproc_pdrv = {
-	.probe		= dcmipp_postproc_probe,
-	.remove		= dcmipp_postproc_remove,
-	.id_table	= dcmipp_postproc_driver_ids,
+static struct platform_driver dcmipp_byteproc_pdrv = {
+	.probe		= dcmipp_byteproc_probe,
+	.remove		= dcmipp_byteproc_remove,
+	.id_table	= dcmipp_byteproc_driver_ids,
 	.driver		= {
-		.name	= DCMIPP_POSTPROC_DRV_NAME,
+		.name	= DCMIPP_BYTEPROC_DRV_NAME,
 	},
 };
 
-module_platform_driver(dcmipp_postproc_pdrv);
+module_platform_driver(dcmipp_byteproc_pdrv);
 
-MODULE_DEVICE_TABLE(platform, dcmipp_postproc_driver_ids);
+MODULE_DEVICE_TABLE(platform, dcmipp_byteproc_driver_ids);
 
 MODULE_AUTHOR("Hugues Fruchet <hugues.fruchet@foss.st.com>");
 MODULE_AUTHOR("Alain Volmat <alain.volmat@foss.st.com>");
