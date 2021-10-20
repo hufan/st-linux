@@ -25,7 +25,7 @@
 				     <GIC_SPI 89 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&rcc LTDC_PX>;
 			clock-names = "lcd";
-			resets = <&rcc LTDC_R>;
+			resets = <&scmi0_reset RST_SCMI0_LTDC>;
 			status = "disabled";
 		};
 	};
