@@ -236,6 +236,7 @@
 	st,ext-phyclk;
 	nvmem-cells = <&ethernet_mac2_address>;
 	nvmem-cell-names = "mac-address";
+	phy-supply = <&scmi_v3v3_sw>;
 
 	mdio1 {
 		#address-cells = <1>;
