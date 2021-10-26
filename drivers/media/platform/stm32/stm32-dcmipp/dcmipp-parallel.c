@@ -28,12 +28,16 @@
 #define DCMIPP_PRCR_FORMAT_RAW8 0x2A
 #define DCMIPP_PRCR_FORMAT_G8 0x4A
 #define DCMIPP_PRCR_FORMAT_BYTE_STREAM 0x5A
+#define DCMIPP_PRCR_ESS BIT(4)
 #define DCMIPP_PRCR_PCKPOL BIT(5)
 #define DCMIPP_PRCR_HSPOL BIT(6)
 #define DCMIPP_PRCR_VSPOL BIT(7)
 #define DCMIPP_PRCR_ENABLE BIT(14)
 #define DCMIPP_PRCR_SWAPCYCLES BIT(25)
 #define DCMIPP_PRCR_SWAPBITS BIT(26)
+
+#define DCMIPP_PRESCR (0x108)
+#define DCMIPP_PRESUR (0x10c)
 
 #define IS_SINK(pad) (!(pad))
 #define IS_SRC(pad)  ((pad))
@@ -217,7 +221,8 @@ static int dcmipp_par_get_fmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static void dcmipp_par_adjust_fmt(struct v4l2_mbus_framefmt *fmt, __u32 pad)
+static void dcmipp_par_adjust_fmt(struct dcmipp_par_device *par,
+				  struct v4l2_mbus_framefmt *fmt, __u32 pad)
 {
 	const struct dcmipp_par_pix_map *vpix;
 
@@ -225,6 +230,11 @@ static void dcmipp_par_adjust_fmt(struct v4l2_mbus_framefmt *fmt, __u32 pad)
 	vpix = dcmipp_par_pix_map_by_code(IS_SINK(pad)?fmt->code:0,
 					  IS_SRC(pad)?fmt->code:0);
 	if (!vpix)
+		fmt->code = fmt_default.code;
+
+	/* Exclude JPEG if BT656 bus is selected */
+	if (vpix->code_sink == MEDIA_BUS_FMT_JPEG_1X8 &&
+	    par->ved.bus_type == V4L2_MBUS_BT656)
 		fmt->code = fmt_default.code;
 
 	fmt->width = clamp_t(u32, fmt->width, DCMIPP_FRAME_MIN_WIDTH,
@@ -256,7 +266,7 @@ static int dcmipp_par_set_fmt(struct v4l2_subdev *sd,
 	}
 
 	/* Set the new format */
-	dcmipp_par_adjust_fmt(&fmt->format, fmt->pad);
+	dcmipp_par_adjust_fmt(par, &fmt->format, fmt->pad);
 
 	dev_dbg(par->dev, "%s: format update: old:%dx%d (0x%x, %d, %d, %d, %d) new:%dx%d (0x%x, %d, %d, %d, %d)\n",
 		par->sd.name,
@@ -302,6 +312,23 @@ static int dcmipp_par_configure(struct dcmipp_par_device *par)
 	/* Set pixel clock polarity */
 	if (par->ved.bus.flags & V4L2_MBUS_PCLK_SAMPLE_RISING)
 		val |= DCMIPP_PRCR_PCKPOL;
+
+	/*
+	 * BT656 embedded synchronisation bus mode.
+	 *
+	 * Default SAV/EAV mode is supported here with default codes
+	 * SAV=0xff000080 & EAV=0xff00009d.
+	 * With DCMIPP this means LSC=SAV=0x80 & LEC=EAV=0x9d.
+	 */
+	if (par->ved.bus_type == V4L2_MBUS_BT656) {
+		val |= DCMIPP_PRCR_ESS;
+
+		/* Unmask all codes */
+		reg_write(par, DCMIPP_PRESUR, 0xffffffff);/* FEC:LEC:LSC:FSC */
+
+		/* Trig on LSC=0x80 & LEC=0x9d codes, ignore FSC and FEC */
+		reg_write(par, DCMIPP_PRESCR, 0xff9d80ff);/* FEC:LEC:LSC:FSC */
+	}
 
 	/* Set format */
 	vpix = dcmipp_par_pix_map_by_code(par->sink_format.code,

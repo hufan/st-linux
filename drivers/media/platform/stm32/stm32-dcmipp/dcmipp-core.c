@@ -431,6 +431,14 @@ static int dcmipp_graph_notify_bound(struct v4l2_async_notifier *notifier,
 	if ((ep.bus_type == V4L2_MBUS_PARALLEL ||
 	     ep.bus_type == V4L2_MBUS_BT656) &&
 	     ep.bus.parallel.bus_width > 0) {
+		/* Only 8 bits bus width supported with BT656 bus */
+		if (ep.bus_type == V4L2_MBUS_BT656 &&
+		    ep.bus.parallel.bus_width != 8) {
+			dev_err(dcmipp->dev, "BT656 bus conflicts with %u bits bus width (8 bits required)\n",
+				ep.bus.parallel.bus_width);
+			return -ENODEV;
+		}
+
 		/*
 		 * Parallel input device detected
 		 * Connect it to parallel subdev
@@ -439,6 +447,7 @@ static int dcmipp_graph_notify_bound(struct v4l2_async_notifier *notifier,
 		sink->bus.flags = ep.bus.parallel.flags;
 		sink->bus.bus_width = ep.bus.parallel.bus_width;
 		sink->bus.data_shift = ep.bus.parallel.data_shift;
+		sink->bus_type = ep.bus_type;
 		ret = media_create_pad_link(&subdev->entity, src_pad,
 					    sink->ent, 0,
 					    MEDIA_LNK_FL_IMMUTABLE |

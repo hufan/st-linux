@@ -113,6 +113,7 @@ struct dcmipp_ent_device {
 
 	/* Parallel input device */
 	struct v4l2_fwnode_bus_parallel	bus;
+	enum v4l2_mbus_type		bus_type;
 	irq_handler_t handler;
 	irqreturn_t handler_ret;
 	irq_handler_t thread_fn;
