@@ -157,6 +157,10 @@
 	};
 };
 
+&cryp {
+	status = "okay";
+};
+
 &dma1 {
 	sram = <&dma_pool>;
 };
