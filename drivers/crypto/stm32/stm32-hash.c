@@ -1917,7 +1917,7 @@ static int stm32_hash_probe(struct platform_device *pdev)
 	switch (ret) {
 	case 0:
 		break;
-	case -ENOENT:
+	case -ENODEV:
 		dev_err(dev, "DMA mode not available\n");
 		break;
 	default:
