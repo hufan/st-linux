@@ -163,10 +163,10 @@ static int stm32_rng_runtime_resume(struct device *dev)
 	u32 reg;
 	struct stm32_rng_private *priv = dev_get_drvdata(dev);
 
+	clk_prepare_enable(priv->clk);
 	reg = readl_relaxed(priv->base + RNG_CR);
 	reg |= RNG_CR_RNGEN;
 	writel_relaxed(reg, priv->base + RNG_CR);
-	clk_prepare_enable(priv->clk);
 
 	return 0;
 }
