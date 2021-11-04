@@ -640,8 +640,6 @@ static int dcmipp_probe(struct platform_device *pdev)
 
 	pm_runtime_enable(dcmipp->dev);
 
-	pm_runtime_get_sync(dcmipp->dev);
-
 	dev_info(&pdev->dev, "Probe done");
 
 	return 0;
@@ -651,18 +649,21 @@ static int dcmipp_remove(struct platform_device *pdev)
 {
 	struct dcmipp_device *dcmipp = platform_get_drvdata(pdev);
 
+	pm_runtime_disable(&pdev->dev);
+
 	component_master_del(&pdev->dev, &dcmipp_comp_ops);
 	dcmipp_rm_subdevs(dcmipp);
-
-	pm_runtime_put(dcmipp->dev);
-
-	pm_runtime_disable(&pdev->dev);
 
 	return 0;
 }
 
 static __maybe_unused int dcmipp_runtime_suspend(struct device *dev)
 {
+	struct dcmipp_device *dcmipp = dev_get_drvdata(dev);
+
+	clk_disable_unprepare(dcmipp->kclk);
+	clk_disable_unprepare(dcmipp->mclk);
+
 	return 0;
 }
 

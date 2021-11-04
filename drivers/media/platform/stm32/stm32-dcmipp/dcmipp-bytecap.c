@@ -14,6 +14,7 @@
 #include <linux/module.h>
 #include <linux/mod_devicetable.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <linux/reset.h>
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-mc.h>
@@ -120,6 +121,7 @@ struct dcmipp_bytecap_device {
 	struct dcmipp_ent_device ved;
 	struct video_device vdev;
 	struct device *dev;
+	struct device *cdev;
 	struct v4l2_pix_format format;
 	struct vb2_queue queue;
 	struct list_head buffers;
@@ -477,8 +479,8 @@ static int dcmipp_pipeline_s_stream(struct dcmipp_bytecap_device *vcap, int stat
 	return 0;
 }
 
-static int dcmipp_start_capture(struct dcmipp_bytecap_device *vcap,
-				struct dcmipp_buf *buf)
+static void dcmipp_start_capture(struct dcmipp_bytecap_device *vcap,
+				 struct dcmipp_buf *buf)
 {
 	/*
 	 * Set buffer address
@@ -492,8 +494,6 @@ static int dcmipp_start_capture(struct dcmipp_bytecap_device *vcap,
 
 	/* Capture request */
 	reg_set(vcap, DCMIPP_P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
-
-	return 0;
 }
 
 static int dcmipp_bytecap_start_streaming(struct vb2_queue *vq, unsigned int count)
@@ -512,12 +512,19 @@ static int dcmipp_bytecap_start_streaming(struct vb2_queue *vq, unsigned int cou
 	vcap->frame_count = 0;
 	vcap->it_count = 0;
 
+	ret = pm_runtime_get_sync(vcap->cdev);
+	if (ret < 0) {
+		dev_err(vcap->dev, "%s: Failed to start streaming, cannot get sync (%d)\n",
+			__func__, ret);
+		goto err_pm_put;
+	}
+
 	/* Start the media pipeline */
 	ret = media_pipeline_start(entity, &vcap->pipe);
 	if (ret) {
 		dev_err(vcap->dev, "%s: Failed to start streaming, media pipeline start error (%d)\n",
 			__func__, ret);
-		return ret;
+		goto err_pm_put;
 	}
 
 	/* Start all the elements within pipeline */
@@ -553,15 +560,14 @@ static int dcmipp_bytecap_start_streaming(struct vb2_queue *vq, unsigned int cou
 	vcap->state = RUNNING;
 
 	/* Start capture */
-	ret = dcmipp_start_capture(vcap, buf);
-	if (ret)
-		goto err_release_buffers;
+	dcmipp_start_capture(vcap, buf);
 
 	return 0;
 
 err_media_pipeline_stop:
 	media_pipeline_stop(entity);
-err_release_buffers:
+err_pm_put:
+	pm_runtime_put(vcap->cdev);
 	spin_lock_irq(&vcap->irqlock);
 	/*
 	 * Return all buffers to vb2 in QUEUED state.
@@ -638,6 +644,8 @@ static void dcmipp_bytecap_stop_streaming(struct vb2_queue *vq)
 
 	spin_unlock_irq(&vcap->irqlock);
 
+	pm_runtime_put(vcap->cdev);
+
 	if (ret) {
 		/* Reset IP on timeout */
 		if (reset_control_assert(vcap->rstc))
@@ -713,9 +721,8 @@ static void dcmipp_bytecap_buf_queue(struct vb2_buffer *vb2_buf)
 			buf->vb.vb2_buf.index);
 
 		spin_unlock_irq(&vcap->irqlock);
-		if (dcmipp_start_capture(vcap, buf))
-			dev_err(vcap->dev, "%s: Cannot restart capture on new buffer\n",
-				__func__);
+		dcmipp_start_capture(vcap, buf);
+
 		return;
 	}
 
@@ -1014,6 +1021,7 @@ static int dcmipp_bytecap_comp_bind(struct device *comp, struct device *master,
 	vcap->dev = comp;
 	vcap->regs = bind_data->regs;
 	vcap->rstc = bind_data->rstc;
+	vcap->cdev = master;
 
 	/* Initialize the video_device struct */
 	vdev = &vcap->vdev;
