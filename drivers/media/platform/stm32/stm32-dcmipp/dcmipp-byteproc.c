@@ -122,13 +122,6 @@ static const struct v4l2_mbus_framefmt fmt_default = {
 	.colorspace = V4L2_COLORSPACE_DEFAULT,
 };
 
-static const struct v4l2_rect crop_default = {
-	.top = 0,
-	.left = 0,
-	.width = DCMIPP_FMT_WIDTH_DEFAULT,
-	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
-};
-
 static const struct v4l2_rect crop_min = {
 	.width = DCMIPP_FRAME_MIN_WIDTH,
 	.height = DCMIPP_FRAME_MIN_HEIGHT,
