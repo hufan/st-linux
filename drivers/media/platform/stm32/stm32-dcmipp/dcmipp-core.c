@@ -192,8 +192,6 @@ static int dcmipp_comp_bind(struct device *master)
 	struct dcmipp_bind_data bind_data;
 	int ret;
 
-	dev_dbg(master, "bind");
-
 	/* Register the v4l2 struct */
 	ret = v4l2_device_register(dcmipp->mdev.dev, &dcmipp->v4l2_dev);
 	if (ret) {
@@ -232,8 +230,6 @@ err_v4l2_unregister:
 static void dcmipp_comp_unbind(struct device *master)
 {
 	struct dcmipp_device *dcmipp = platform_get_drvdata(to_platform_device(master));
-
-	dev_dbg(master, "unbind");
 
 	v4l2_async_notifier_unregister(&dcmipp->notifier);
 	v4l2_async_notifier_cleanup(&dcmipp->notifier);
@@ -531,16 +527,6 @@ static int dcmipp_graph_init(struct dcmipp_device *dcmipp)
 	return 0;
 }
 
-static void dcmipp_dump_hwconfig(struct dcmipp_device *dcmipp)
-{
-	dev_dbg(dcmipp->dev, "[DCMIPP_VERR]    =%#10.8x\n",
-		reg_read(dcmipp, DCMIPP_VERR));
-	dev_dbg(dcmipp->dev, "[DCMIPP_CMHWCFGR]=%#10.8x\n",
-		reg_read(dcmipp, DCMIPP_CMHWCFGR));
-	dev_dbg(dcmipp->dev, "[DCMIPP_P0HWCFGR]=%#10.8x\n",
-		reg_read(dcmipp, DCMIPP_P0HWCFGR));
-}
-
 static int dcmipp_probe(struct platform_device *pdev)
 {
 	struct dcmipp_device *dcmipp;
@@ -550,8 +536,6 @@ static int dcmipp_probe(struct platform_device *pdev)
 	const struct dcmipp_pipeline_config *pipe_cfg;
 	int irq;
 	int ret;
-
-	dev_dbg(&pdev->dev, "probe");
 
 	dcmipp = devm_kzalloc(&pdev->dev, sizeof(struct dcmipp_device), GFP_KERNEL);
 	if (!dcmipp)
@@ -658,9 +642,7 @@ static int dcmipp_probe(struct platform_device *pdev)
 
 	pm_runtime_get_sync(dcmipp->dev);
 
-	dcmipp_dump_hwconfig(dcmipp);
-
-	dev_dbg(&pdev->dev, "Probe done");
+	dev_info(&pdev->dev, "Probe done");
 
 	return 0;
 }
@@ -668,8 +650,6 @@ static int dcmipp_probe(struct platform_device *pdev)
 static int dcmipp_remove(struct platform_device *pdev)
 {
 	struct dcmipp_device *dcmipp = platform_get_drvdata(pdev);
-
-	dev_dbg(&pdev->dev, "remove");
 
 	component_master_del(&pdev->dev, &dcmipp_comp_ops);
 	dcmipp_rm_subdevs(dcmipp);
