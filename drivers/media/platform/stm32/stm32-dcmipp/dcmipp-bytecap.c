@@ -532,6 +532,8 @@ static int dcmipp_bytecap_start_streaming(struct vb2_queue *vq, unsigned int cou
 	if (ret)
 		goto err_media_pipeline_stop;
 
+	spin_lock_irq(&vcap->irqlock);
+
 	/* Enable interruptions */
 	vcap->cmier |= DCMIPP_CMIER_P0ALL;
 	reg_set(vcap, DCMIPP_CMIER, vcap->cmier);
@@ -551,6 +553,7 @@ static int dcmipp_bytecap_start_streaming(struct vb2_queue *vq, unsigned int cou
 		dev_dbg(vcap->dev, "Start streaming is deferred to next buffer queueing\n");
 		vcap->active = NULL;
 		vcap->state = WAIT_FOR_BUFFER;
+		spin_unlock_irq(&vcap->irqlock);
 		return 0;
 	}
 	vcap->active = buf;
@@ -558,6 +561,8 @@ static int dcmipp_bytecap_start_streaming(struct vb2_queue *vq, unsigned int cou
 		buf->vb.vb2_buf.index, buf, &buf->paddr);
 
 	vcap->state = RUNNING;
+
+	spin_unlock_irq(&vcap->irqlock);
 
 	/* Start capture */
 	dcmipp_start_capture(vcap, buf);
