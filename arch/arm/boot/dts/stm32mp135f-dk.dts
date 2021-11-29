@@ -121,6 +121,7 @@
 			regulator-name = "vddmmc2";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
 
 	};
 		
