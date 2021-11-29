@@ -116,10 +116,18 @@
 		regulator-always-on;
 	};
 
-	wifi_pwrseq: wifi-pwrseq {
-		compatible = "mmc-pwrseq-simple";
-		reset-gpios = <&mcp23017 11 GPIO_ACTIVE_LOW>;
+	vddmmc2: fixedregulator@0 {
+			compatible = "regulator-fixed";
+			regulator-name = "vddmmc2";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+
 	};
+		
+	// wifi_pwrseq: wifi-pwrseq {
+		// compatible = "mmc-pwrseq-simple";
+		// reset-gpios = <&mcp23017 11 GPIO_ACTIVE_LOW>;
+	// };
 };
 
 &dma1 {
@@ -307,25 +315,42 @@
 };
 
 /* Wifi */
-&sdmmc2 {
-	//arm,primecell-periphid = <0x10153180>;
-	pinctrl-names = "default", "opendrain", "sleep";
-	pinctrl-0 = <&sdmmc2_b4_pins_a>;
-	pinctrl-1 = <&sdmmc2_b4_od_pins_a>;
-	pinctrl-2 = <&sdmmc2_b4_sleep_pins_a>;
-	non-removable;
-	st,neg-edge;
-	bus-width = <4>;
-	vmmc-supply = <&v3v3_ao>;
-	//mmc-pwrseq = <&wifi_pwrseq>;
-	//#address-cells = <1>;
-	//#size-cells = <0>;
-	status = "okay";
+// &sdmmc2 {
+	// //arm,primecell-periphid = <0x10153180>;
+	// pinctrl-names = "default", "opendrain", "sleep";
+	// pinctrl-0 = <&sdmmc2_b4_pins_a>;
+	// pinctrl-1 = <&sdmmc2_b4_od_pins_a>;
+	// pinctrl-2 = <&sdmmc2_b4_sleep_pins_a>;
+	// non-removable;
+	// st,neg-edge;
+	// bus-width = <4>;
+	// vmmc-supply = <&v3v3_ao>;
+	// //mmc-pwrseq = <&wifi_pwrseq>;
+	// //#address-cells = <1>;
+	// //#size-cells = <0>;
+	// status = "okay";
 
-	//brcmf: bcrmf@1 {
-	//	reg = <1>;
-	//	compatible = "brcm,bcm4329-fmac";
-	//};
+	// //brcmf: bcrmf@1 {
+	// //	reg = <1>;
+	// //	compatible = "brcm,bcm4329-fmac";
+	// //};
+// };
+
+/*emmc*/
+&sdmmc2 {
+        pinctrl-names = "default";
+        pinctrl-0 = <&sdmmc2_b4_pins_a &sdmmc2_b4_pins_b>;
+        // pinctrl-1 = <&sdmmc2_b4_od_pins_a>;
+        // pinctrl-2 = <&sdmmc2_b4_sleep_pins_a>;
+        non-removable;
+        no-sd;
+        no-sdio;
+        st,neg-edge;
+        bus-width = <8>;
+        vmmc-supply = <&vddmmc2>;
+        vqmmc-supply = <&vddmmc2>;
+        mmc-ddr-3_3v;
+        status = "okay";
 };
 
 &spi5 {
@@ -438,13 +463,13 @@
 	/delete-property/dmas;
 	/delete-property/dma-names;
 
-	bluetooth {
-		shutdown-gpios = <&mcp23017 13 GPIO_ACTIVE_HIGH>;
-		compatible = "brcm,bcm43438-bt";
-		max-speed = <3000000>;
-		vbat-supply = <&v3v3_ao>;
-		vddio-supply = <&v3v3_ao>;
-	};
+	// bluetooth {
+		// shutdown-gpios = <&mcp23017 13 GPIO_ACTIVE_HIGH>;
+		// compatible = "brcm,bcm43438-bt";
+		// max-speed = <3000000>;
+		// vbat-supply = <&v3v3_ao>;
+		// vddio-supply = <&v3v3_ao>;
+	// };
 };
 
 &usbh_ehci {
