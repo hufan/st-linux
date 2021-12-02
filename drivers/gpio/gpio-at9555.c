@@ -29,8 +29,8 @@ struct at9555_gpio {
 	struct mutex irq_lock;
 	unsigned gpio_start;
 	unsigned irq_base;
-	uint8_t dat_out[2];
-	uint8_t dir[2];
+	uint8_t dat_out[4];
+	uint8_t dir[4];
 	//uint8_t int_lvl[3];
 	//uint8_t int_en[3];
 	//uint8_t irq_mask[3];
@@ -40,8 +40,16 @@ struct at9555_gpio {
 struct at9555_platform_data {
 	/* number assigned to the first GPIO */
 	int gpio_base;
-
 	char *label;
+	unsigned        n_latch;
+
+	int             (*setup)(struct i2c_client *client,
+									int gpio, unsigned ngpio,
+									void *context);
+	int             (*teardown)(struct i2c_client *client,
+									int gpio, unsigned ngpio,
+									void *context);
+	void            *context;
 
 	/* list of GPIO names (array length = SC16IS7X2_NR_GPIOS) */
 	const char *const *names;
@@ -158,12 +166,11 @@ static struct at9555_platform_data *at9555_parse_dt(struct device_node* np)
 static int at9555_gpio_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
 {
-	struct at9555_gpio *dev;
-	struct gpio_chip *gc;
-	struct at9555_platform_data *pdata;
+	int				status;
+	struct at9555_platform_data	*pdata = dev_get_platdata(&client->dev);
 	int ret, i;
 
-	struct device_node		*np = client->dev.of_node;
+	// struct device_node		*np = client->dev.of_node;
 	struct at9555_gpio		*gpio;
 
 	printk(KERN_INFO "i2c at9555 probe\n");
@@ -183,55 +190,63 @@ static int at9555_gpio_probe(struct i2c_client *client,
 		return -EIO;
 	}
 
-	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
-	if (dev == NULL) {
-		dev_err(&client->dev, "failed to alloc memory\n");
+	/* Allocate, initialize, and register this gpio_chip. */
+	gpio = devm_kzalloc(&client->dev, sizeof(*gpio), GFP_KERNEL);
+	if (!gpio)
 		return -ENOMEM;
-	}
 
 	at9555_gpio_read(client,REG_OUTPUT_PORT0);
 
-	dev->client = client;
+	gpio->gpio_chip.base			= pdata ? pdata->gpio_base : -1;
+	gpio->gpio_chip.can_sleep		= true;
+	gpio->gpio_chip.parent		= &client->dev;
+	gpio->gpio_chip.owner		= THIS_MODULE;
+	gpio->gpio_chip.get			= at9555_gpio_get_value;
+	gpio->gpio_chip.set			= at9555_gpio_set_value;
+	gpio->gpio_chip.direction_input	= at9555_gpio_direction_input;
+	gpio->gpio_chip.direction_output	= at9555_gpio_direction_output;
+	gpio->gpio_chip.ngpio		=  AT9555_MAXGPIO;
 
-	gc = &dev->gpio_chip;
-	gc->direction_input = at9555_gpio_direction_input;
-	gc->direction_output = at9555_gpio_direction_output;
-	gc->get = at9555_gpio_get_value;
-	gc->set = at9555_gpio_set_value;
-	gc->can_sleep = true;
-
-	gc->base = pdata->gpio_base;
-	gc->ngpio = AT9555_MAXGPIO;
-	gc->label = pdata->label;
-	gc->names = pdata->names;
-	// gc->dev = &dev->client->dev;
-	gc->owner = THIS_MODULE;
-
-	mutex_init(&dev->lock);
+	mutex_init(&gpio->lock);
 
 	for (i = 0, ret = 0; i <= AT9555_BANK(AT9555_MAXGPIO); i++) {
-		dev->dat_out[i] = at9555_gpio_read(client, REG_OUTPUT_PORT0 + i);
-		dev->dir[i] = at9555_gpio_read(client, REG_INPUT_PORT0 + i);
+		gpio->dat_out[i] = at9555_gpio_read(client, REG_OUTPUT_PORT0 + i);
+		gpio->dir[i] = at9555_gpio_read(client, REG_INPUT_PORT0 + i);
 	}
 
-	ret = gpiochip_add(&dev->gpio_chip);
-	if (ret)
-		goto err;
+	gpio->client = client;
+	i2c_set_clientdata(client, gpio);
 
-	i2c_set_clientdata(client, dev);
+	status = devm_gpiochip_add_data(&client->dev, &gpio->gpio_chip, gpio);
+	if (status < 0)
+		goto fail;
+
+	/* Let platform code set up the GPIOs and their users.
+	 * Now is the first time anyone could use them.
+	 */
+	if (pdata && pdata->setup) {
+		status = pdata->setup(client,
+				gpio->gpio_chip.base, gpio->gpio_chip.ngpio,
+				pdata->context);
+		if (status < 0)
+			dev_warn(&client->dev, "setup --> %d\n", status);
+	}
+
+	dev_info(&client->dev, "probed\n");
+
 
 	return 0;
 
-err:
-	kfree(dev);
-	return ret;
+fail:
+	dev_dbg(&client->dev, "probe error %d for '%s'\n", status,
+		client->name);
+	kfree(gpio);
+	return status;
 }
 
 static int at9555_gpio_remove(struct i2c_client *client)
 {
 	struct at9555_gpio *dev = i2c_get_clientdata(client);
-	int ret;
-
 
 	gpiochip_remove(&dev->gpio_chip);
 	//if (ret) {
