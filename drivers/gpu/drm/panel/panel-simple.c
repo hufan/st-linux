@@ -109,6 +109,7 @@ struct panel_simple {
 	struct i2c_adapter *ddc;
 
 	struct gpio_desc *enable_gpio;
+	struct gpio_desc *reset_gpio;
 	struct gpio_desc *hpd_gpio;
 
 	struct drm_display_mode override_mode;
@@ -253,6 +254,8 @@ static int panel_simple_unprepare(struct drm_panel *panel)
 		return 0;
 
 	gpiod_set_value_cansleep(p->enable_gpio, 0);
+    usleep_range(10, 20);
+    gpiod_set_value_cansleep(p->reset_gpio, 0);
 
 	regulator_disable(p->supply);
 
@@ -306,6 +309,8 @@ static int panel_simple_prepare(struct drm_panel *panel)
 	}
 
 	gpiod_set_value_cansleep(p->enable_gpio, 1);
+    usleep_range(10, 20);
+    gpiod_set_value_cansleep(p->reset_gpio, 1);
 
 	delay = p->desc->delay.prepare;
 	if (p->no_hpd)
@@ -536,6 +541,13 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
 			dev_err(dev, "failed to request GPIO: %d\n", err);
 		return err;
 	}
+
+    panel->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+    if (IS_ERR(panel->reset_gpio)) {
+        err = PTR_ERR(panel->reset_gpio);
+        dev_err(dev, "cannot get reset-gpios %d\n", err);
+        return err;
+    }
 
 	err = of_drm_get_panel_orientation(dev->of_node, &panel->orientation);
 	if (err) {
@@ -3187,6 +3199,33 @@ static const struct panel_desc qd43003c0_40 = {
 	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
 };
 
+static const struct display_timing myir_070tft_timing = {
+    // myir
+    .pixelclock = {33000000, 33000000, 33000000},
+    .hactive = {800, 800, 800},
+    .hfront_porch = {210, 210, 210},
+    .hback_porch = {46, 46, 46},
+    .hsync_len = {1, 1, 1},
+    .vactive = {480, 480, 480},
+    .vfront_porch = {23, 23, 23},
+    .vback_porch = {22, 22, 22},
+    .vsync_len = {20, 20, 20},
+};
+
+static const struct panel_desc myir_070tft = {
+	.timings = &myir_070tft_timing,
+	.num_timings = 1,
+	.bpc = 6,
+	.size =
+	{
+		.width = 154,
+		.height = 86,
+	},
+	.bus_flags = DRM_BUS_FLAG_DE_HIGH,
+	.bus_format = MEDIA_BUS_FMT_RGB888_1X7X4_SPWG,
+	.connector_type = DRM_MODE_CONNECTOR_DPI,
+};
+
 static const struct drm_display_mode rocktech_rk043fn48h_mode = {
 	.clock = 10000,
 	.hdisplay = 480,
@@ -4334,6 +4373,9 @@ static const struct of_device_id platform_of_match[] = {
 		.compatible = "panel-dpi",
 		.data = &panel_dpi,
 	}, {
+        .compatible = "myir,070tft-7",
+        .data = &myir_070tft,
+    },{
 		/* sentinel */
 	}
 };
