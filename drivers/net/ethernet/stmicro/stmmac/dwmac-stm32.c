@@ -8,6 +8,7 @@
 
 #include <linux/clk.h>
 #include <linux/kernel.h>
+#include <linux/gpio/consumer.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -90,6 +91,7 @@ struct stm32_dwmac {
 	u32 speed;
 	const struct stm32_ops *ops;
 	struct device *dev;
+	struct gpio_desc *phy_reset;
 };
 
 struct stm32_syscfg_pmcsetr {
@@ -401,6 +403,20 @@ static int phy_power_on(struct stm32_dwmac *bsp_priv, bool enable)
 	return 0;
 }
 
+
+static int stm32_dwmac_phy_reset(struct device *dev, struct stm32_dwmac *dwmac)
+{
+
+       dwmac->phy_reset = devm_gpiod_get_optional(dev, "st,phy-reset", GPIOD_OUT_LOW);
+       if (IS_ERR(dwmac->phy_reset))
+          return PTR_ERR(dwmac->phy_reset);
+       if (dwmac->phy_reset) {
+                usleep_range(100, 200);
+               gpiod_set_value_cansleep(dwmac->phy_reset, 1);
+       }
+       return 0;
+}
+
 static int stm32_dwmac_probe(struct platform_device *pdev)
 {
 	struct plat_stmmacenet_data *plat_dat;
@@ -408,6 +424,15 @@ static int stm32_dwmac_probe(struct platform_device *pdev)
 	struct stm32_dwmac *dwmac;
 	const struct stm32_ops *data;
 	int ret;
+
+        dwmac = devm_kzalloc(&pdev->dev, sizeof(*dwmac), GFP_KERNEL);
+        if (!dwmac)
+                return -ENOMEM;
+
+        /* Optional Phy reset */
+        ret = stm32_dwmac_phy_reset(&pdev->dev, dwmac);
+        if (ret)
+	        return ret;
 
 	ret = stmmac_get_platform_resources(pdev, &stmmac_res);
 	if (ret)
