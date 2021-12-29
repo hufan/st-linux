@@ -1057,7 +1057,6 @@ static const struct clock_config stm32mp13_clock_cfg[] = {
 	STM32_MGATE_MP1(SAI1, "sai1", "pclk2", 0, GATE_SAI1, SECF_NONE),
 	STM32_MGATE_MP1(SAI2, "sai2", "pclk2", 0, GATE_SAI2, SECF_NONE),
 	PCLK(SYSCFG, "syscfg", "pclk3", 0, GATE_SYSCFG, SECF_NONE),
-	PCLK(VREF, "vref", "pclk3", 0, GATE_VREF, SECF_VREF),
 	PCLK(DTS, "dts", "pclk3", 0, GATE_DTS, SECF_NONE),
 	PCLK(PMBCTRL, "pmbctrl", "pclk3", 0, GATE_PMBCTRL, SECF_NONE),
 	PCLK(HDP, "hdp", "pclk3", 0, GATE_HDP, SECF_NONE),
@@ -1099,6 +1098,7 @@ static const struct clock_config stm32mp13_clock_cfg[] = {
 	PCLK(DDRPERFM, "ddrperfm", "pclk4", 0, GATE_DDRPERFM, SECF_NONE),
 	PCLK(ETH1STP, "eth1stp", "ck_axi", 0, GATE_ETH1STP, SECF_ETH1STP),
 	PCLK(ETH2STP, "eth2stp", "ck_axi", 0, GATE_ETH2STP, SECF_ETH2STP),
+	PCLK(SPI1, "spi1", "pclk2", 0, GATE_SPI1, SECF_NONE),
 
 	/* Kernel clocks */
 	KCLK_SAFE(SDMMC1_K, "sdmmc1_k", 0, GATE_SDMMC1, MUX_SDMMC1, SECF_SDMMC1),
