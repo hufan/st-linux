@@ -32,6 +32,7 @@
 #include <linux/string.h>
 #include <linux/uaccess.h>
 #include <linux/unistd.h>
+#include <linux/motorcomm_phy.h>
 
 MODULE_DESCRIPTION("PHY library");
 MODULE_AUTHOR("Andy Fleming");
@@ -197,6 +198,105 @@ static void features_init(void)
 			       ARRAY_SIZE(phy_10gbit_fec_features_array),
 			       phy_10gbit_fec_features);
 }
+
+#define REG_DEBUG_ADDR_OFFSET          0x1e
+#define REG_DEBUG_DATA                 0x1f
+
+static int ytphy_mii_rd_ext(struct mii_bus *bus, int phy_id, u32 regnum)
+{
+	int ret;
+	int val;
+
+	ret = bus->write(bus, phy_id, REG_DEBUG_ADDR_OFFSET, regnum);
+	if (ret < 0)
+			return ret;
+
+	val = bus->read(bus, phy_id, REG_DEBUG_DATA);
+
+	return val;
+}
+
+static int ytphy_mii_wr_ext(struct mii_bus *bus, int phy_id, u32 regnum, u16 val)
+{
+	int ret;
+
+	ret = bus->write(bus, phy_id, REG_DEBUG_ADDR_OFFSET, regnum);
+	if (ret < 0)
+			return ret;
+
+	ret = bus->write(bus, phy_id, REG_DEBUG_DATA, val);
+
+	return ret;
+}
+
+int yt8511_config_out_125m(struct mii_bus *bus, int phy_id)
+{
+       int ret;
+       int val;
+       //int debug;
+       int rett;
+
+       /* disable auto sleep */
+       val = ytphy_mii_rd_ext(bus, phy_id, 0x27);
+       if (val < 0)
+               return val;
+
+       val &= (~BIT(15));
+
+       ret = ytphy_mii_wr_ext(bus, phy_id, 0x27, val);
+       if (ret < 0)
+               return ret;
+
+       /* enable RXC clock when no wire plug */
+       val = ytphy_mii_rd_ext(bus, phy_id, 0xc);
+       if (val < 0)
+               return val;
+
+       val |= (3 << 1);
+       val |= (1 << 0);
+
+       /*  config rx_delay
+       debug = ytphy_mii_rd_ext(bus,phy_id,0x1e);
+       printk("debug = %x\n",debug);  //0x300  700 F00
+       debug |= (0xf << 8);
+       debug |= (1 << 12);   //1F00
+       printk("debug = %x\n",debug);
+       debug = ytphy_mii_wr_ext(bus,phy_id,0x1e,debug);
+       debug = ytphy_mii_rd_ext(bus,phy_id,0x1e);
+       printk("debug = %x\n",debug);
+       */
+
+       ret = ytphy_mii_wr_ext(bus, phy_id, 0xc, val);
+       printk("yt8511_config_out_125m, phy clk out, val=%#08x\n",val);
+
+       rett = ytphy_mii_rd_ext(bus, phy_id, 0xc);
+
+    return ret;
+}
+
+int yt8521_config_out_125m(struct mii_bus *bus, int phy_id)
+{
+       int ret;
+       int val;
+       /*phy 125M*/
+       val = ytphy_mii_rd_ext(bus, phy_id, 0xa012);
+       if (val < 0)
+         return val;
+       //printk("yt8521_config_out_125m,read phy clk out init, val=%#08x\n",val);
+       val |= (1 << 4);
+       val |= (1 << 5);
+       //printk("yt8521_config_out_125m,alex phy clk out W--, val=%#08x\n",val);
+       ret = ytphy_mii_wr_ext(bus, phy_id, 0xa012, val);
+       // READ
+       val = ytphy_mii_rd_ext(bus, phy_id, 0xa012);
+       if (val < 0)
+         return val;
+       //printk("yt8521_config_out_125m,alex phy clk out R--, val=%#08x\n",val);
+    return ret;
+}
+
+extern int yt8521_config_out_125m(struct mii_bus *bus, int phy_id);
+extern int yt8511_config_out_125m(struct mii_bus *bus, int phy_id);
 
 void phy_device_free(struct phy_device *phydev)
 {
@@ -853,6 +953,30 @@ struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45)
 	if (r)
 		return ERR_PTR(r);
 
+    /* config 125M for YT8511 */
+    if(0x10a == phy_id)
+    {       
+		#if 0
+			r = yt8511_config_dis_txdelay(bus, addr);
+			printk (KERN_INFO "8511 dis txdelay, reg=%#04x\n",bus->read(bus,addr,0x1f)/*double check as delay*/);
+			if (r<0)
+				printk (KERN_INFO "failed to dis txdelay, ret=%d\n",r);
+		#endif  
+		printk (KERN_INFO "YT8511, abt to set 125m clk out, phyaddr=%d, phyid=%08x\n",addr, phy_id);
+		r = yt8511_config_out_125m(bus, addr);
+		printk (KERN_INFO "YT8511 set 125m clk out, reg=%#04x\n",bus->read(bus,addr,0x1f)/*double check as delay*/);
+		if (r<0)
+		  printk (KERN_INFO "failed to set 125m clk out, ret=%d\n",r);    
+    }
+    else if(0x11a == phy_id){
+		//printk (KERN_INFO "YT8521, abt to set 125m clk out, phyaddr=%d, phyid=%08x\n",addr, phy_id);
+		r = yt8521_config_out_125m(bus, addr);
+		printk (KERN_INFO "YT8521 set 125m clk out, reg=%#04x\n",bus->read(bus,addr,0x1f)/*double check as delay*/);
+		if (r<0)
+		  printk (KERN_INFO "failed to set 125m clk out, ret=%d\n",r);
+		
+    }
+	
 	return phy_device_create(bus, addr, phy_id, is_c45, &c45_ids);
 }
 EXPORT_SYMBOL(get_phy_device);
