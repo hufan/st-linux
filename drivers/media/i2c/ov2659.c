@@ -1269,7 +1269,7 @@ static int ov2659_power_off(struct device *dev)
 
 	dev_dbg(&client->dev, "%s:\n", __func__);
 
-	gpiod_set_value(ov2659->pwdn_gpio, 1);
+	//gpiod_set_value(ov2659->pwdn_gpio, 1);
 
 	clk_disable_unprepare(ov2659->clk);
 
@@ -1292,14 +1292,14 @@ static int ov2659_power_on(struct device *dev)
 		return ret;
 	}
 
-	gpiod_set_value(ov2659->pwdn_gpio, 0);
+	//gpiod_set_value(ov2659->pwdn_gpio, 0);
 
-	if (ov2659->resetb_gpio) {
-		gpiod_set_value(ov2659->resetb_gpio, 1);
-		usleep_range(500, 1000);
-		gpiod_set_value(ov2659->resetb_gpio, 0);
-		usleep_range(3000, 5000);
-	}
+	//if (ov2659->resetb_gpio) {
+	//	gpiod_set_value(ov2659->resetb_gpio, 1);
+	//	usleep_range(500, 1000);
+	//	gpiod_set_value(ov2659->resetb_gpio, 0);
+	//	usleep_range(3000, 5000);
+	//}
 
 	return 0;
 }
@@ -1462,14 +1462,14 @@ static int ov2659_probe(struct i2c_client *client)
 	/* Optional gpio don't fail if not present */
 	ov2659->pwdn_gpio = devm_gpiod_get_optional(&client->dev, "powerdown",
 						    GPIOD_OUT_LOW);
-	if (IS_ERR(ov2659->pwdn_gpio))
-		return PTR_ERR(ov2659->pwdn_gpio);
+	//if (IS_ERR(ov2659->pwdn_gpio))
+	//	return PTR_ERR(ov2659->pwdn_gpio);
 
 	/* Optional gpio don't fail if not present */
 	ov2659->resetb_gpio = devm_gpiod_get_optional(&client->dev, "reset",
 						      GPIOD_OUT_HIGH);
-	if (IS_ERR(ov2659->resetb_gpio))
-		return PTR_ERR(ov2659->resetb_gpio);
+	//if (IS_ERR(ov2659->resetb_gpio))
+	//	return PTR_ERR(ov2659->resetb_gpio);
 
 	v4l2_ctrl_handler_init(&ov2659->ctrls, 2);
 	ov2659->link_frequency =
