@@ -311,6 +311,23 @@
 	// 		status = "okay";
 	// };
 
+    ptn5150: ptn5150@3d {
+        compatible = "nxp,ptn5150";
+        reg = <0x3d>;
+        //interrupt-parent = <&gpioa>;
+        //interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+	connect-gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+        connector {
+            compatible = "usb-c-connector";
+            label = "USB-C";
+            port {
+                con_usb_c_ep: endpoint {
+                    remote-endpoint = <&usbotg_hs_ep>;
+                };
+            };
+	};
+    };
+
 };
 
 &iwdg2 {
@@ -461,14 +478,22 @@
 // 	status = "okay";
 // };
 
-
 &usbotg_hs {
 	phys = <&usbphyc_port1 0>;
 	phy-names = "usb2-phy";
-	dr_mode = "peripheral";
 	usb-role-switch;
-	role-switch-default-mode = "peripheral";
+	dr_mode = "otg";
+
+	hnp-disable;
+	srp-disable;
+	adp-disable;
+
 	status = "okay";
+	port {
+		usbotg_hs_ep: endpoint {
+			remote-endpoint = <&con_usb_c_ep>;
+		};
+	};
 };
 
 &usbphyc {
