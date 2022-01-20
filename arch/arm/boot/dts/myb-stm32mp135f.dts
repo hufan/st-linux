@@ -48,18 +48,17 @@
 					default-state = "off";
 			};
 	};
-#if 0
-	gpio-keys {
-			compatible = "gpio-keys";
-			status = "okay";
-			user {
-					label = "User";
-					gpios = <&gpioi 1 GPIO_ACTIVE_LOW>;
-					gpio-key,wakeup;
-					linux,code = <KEY_1>;
-			};
-	};
-#endif 
+
+	joystick {
+                compatible = "gpio-keys";
+                #size-cells = <0>;
+                button-0 {
+                         label = "usr_button";
+                         linux,code = <KEY_ENTER>;
+                         interrupt-parent = <&gpioi>;
+                         interrupts = <1 IRQ_TYPE_EDGE_RISING>;
+                };
+        };
 
 	/*LCD Panel*/
 	panel {
@@ -350,9 +349,9 @@
 };
 
 &rtc {
-	st,lsco = <RTC_OUT2_RMP>;
-	// pinctrl-0 = <&rtc_out2_rmp_pins_a>;
-	pinctrl-names = "default";
+//	st,lsco = <RTC_OUT2_RMP>;
+//	pinctrl-0 = <&rtc_out2_rmp_pins_a>;
+//	pinctrl-names = "default";
 	status = "okay";
 };
 
