@@ -157,6 +157,16 @@
 		regulator-boot-on;
 	};
 
+    reg_lte_rst: regulator@3 {
+            compatible = "regulator-fixed";
+            regulator-name = "ltemodule-rst";
+            regulator-min-microvolt = <1800000>;
+            regulator-max-microvolt = <1800000>;
+            gpios = <&at9555 13 GPIO_ACTIVE_HIGH>;
+            regulator-always-on;
+            regulator-boot-on;
+    };
+
 	sys_mclk: clock-mclk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
