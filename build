@@ -1,0 +1,24 @@
+#!/bin/sh
+
+if [ ! -f "/usr/local/oecore-x86_64/environment-setup-cortexa7t2hf-neon-vfpv4-ostl-linux-gnueabi" ]; then
+	source /media/alex/stm32mp135/tools/environment-setup-cortexa7t2hf-neon-vfpv4-ostl-linux-gnueabi
+else
+	source /usr/local/oecore-x86_64/environment-setup-cortexa7t2hf-neon-vfpv4-ostl-linux-gnueabi
+fi
+
+#make ARCH=arm O="$PWD/../build" multi_v7_defconfig 
+make ARCH=arm O="$PWD/../build" stm32mp135x_defconfig
+for f in `ls -1 arch/arm/configs/fragment*.config`; 
+        do scripts/kconfig/merge_config.sh -m -r .config $f; 
+done
+make ARCH=arm uImage vmlinux dtbs LOADADDR=0xC2000000 O="$PWD/../build" -j4
+make ARCH=arm modules O="$PWD/../build" -j4
+
+make ARCH=arm INSTALL_MOD_PATH="$PWD/../build/install_artifact" modules_install O="$PWD/../build"
+mkdir -p $PWD/../build/install_artifact/boot/
+cp $PWD/../build/arch/arm/boot/uImage $PWD/../build/install_artifact/boot/
+cp $PWD/../build/arch/arm/boot/dts/myb-*.dtb $PWD/../build/install_artifact/boot/
+
+#cp $PWD/../build/arch/arm/boot/dts/stm32mp15xc-ya151c*.dtb $PWD/../build/install_artifact/boot/
+#cp $PWD/../build/arch/arm/boot/dts/stm32mp15xc-ya157c*.dtb $PWD/../build/install_artifact/boot/
+
