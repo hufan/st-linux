@@ -200,6 +200,32 @@ static int yt8512_led_init(struct phy_device *phydev)
 	return ret;
 }
 
+static int yt8521_led_init(struct phy_device *phydev)
+{
+    int ret;
+    int val;
+
+    val = ytphy_read_ext(phydev, YT8521_EXTREG_LED1);
+    if (val < 0)
+        return val;
+
+    /* set when link up and speed is 10/100/1000 make led on  as link led */
+    val = 0x70;
+    ret = ytphy_write_ext(phydev, YT8521_EXTREG_LED2, val);
+    if (ret < 0)
+        return ret;
+
+    val = ytphy_read_ext(phydev, YT8521_EXTREG_LED2);
+    if (val < 0)
+        return val;
+
+    /* when rx and tx send or recive msg make led link  as stats led*/
+    val = 0x180;
+    ret = ytphy_write_ext(phydev, YT8521_EXTREG_LED1, val);
+
+    return ret;
+}
+
 static int yt8512_config_init(struct phy_device *phydev)
 {
 	int ret;
@@ -404,6 +430,7 @@ int yt8521_config_dis_txdelay(struct mii_bus *bus, int phy_id)
     return ret;
 }
 
+#if 0
 int yt8511_config_out_125m(struct mii_bus *bus, int phy_id)
 {
 	int ret;
@@ -450,7 +477,7 @@ int yt8511_config_out_125m(struct mii_bus *bus, int phy_id)
 
     return ret;
 }
-
+#endif
 
 static int yt8511_config_init(struct phy_device *phydev)
 {
@@ -690,6 +717,7 @@ static int yt8521_config_init(struct phy_device *phydev)
 #endif
 	if (ret < 0)
 		return ret;
+        ret = yt8521_led_init(phydev);
 
 	/* disable auto sleep */
 	val = ytphy_read_ext(phydev, YT8521_EXTREG_SLEEP_CONTROL1);
