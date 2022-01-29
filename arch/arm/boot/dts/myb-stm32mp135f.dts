@@ -346,7 +346,7 @@
 
 &ltdc {
 	pinctrl-names = "default", "sleep";
-	status = "okay";
+	status = "disabled";
 	port {
 		#address-cells = <1>;
 		#size-cells = <0>;

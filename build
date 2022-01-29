@@ -14,7 +14,7 @@ done
 make ARCH=arm uImage vmlinux dtbs LOADADDR=0xC2000000 O="$PWD/../build" -j4
 make ARCH=arm modules O="$PWD/../build" -j4
 
-make ARCH=arm INSTALL_MOD_PATH="$PWD/../build/install_artifact" modules_install O="$PWD/../build"
+make ARCH=arm INSTALL_MOD_PATH="$PWD/../build/install_artifact" INSTALL_MOD_STRIP=1 modules_install O="$PWD/../build"
 mkdir -p $PWD/../build/install_artifact/boot/
 cp $PWD/../build/arch/arm/boot/uImage $PWD/../build/install_artifact/boot/
 cp $PWD/../build/arch/arm/boot/dts/myb-*.dtb $PWD/../build/install_artifact/boot/
