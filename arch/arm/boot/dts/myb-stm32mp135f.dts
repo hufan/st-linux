@@ -157,15 +157,25 @@
 		regulator-boot-on;
 	};
 
-    reg_lte_rst: regulator@3 {
-            compatible = "regulator-fixed";
-            regulator-name = "ltemodule-rst";
-            regulator-min-microvolt = <1800000>;
-            regulator-max-microvolt = <1800000>;
-            gpios = <&at9555 13 GPIO_ACTIVE_HIGH>;
-            regulator-always-on;
-            regulator-boot-on;
-    };
+        reg_lte_rst: regulator@3 {
+                compatible = "regulator-fixed";
+                regulator-name = "ltemodule-rst";
+                regulator-min-microvolt = <1800000>;
+                regulator-max-microvolt = <1800000>;
+                gpios = <&at9555 13 GPIO_ACTIVE_HIGH>;
+                regulator-always-on;
+                regulator-boot-on;
+        };
+
+        reg_24l: regulator@4 {
+                compatible = "regulator-fixed";
+                regulator-name = "24l-wp";
+                regulator-min-microvolt = <3000000>;
+                regulator-max-microvolt = <3000000>;
+                gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
+                regulator-always-on;
+                regulator-boot-on;
+        };
 
 	sys_mclk: clock-mclk {
 		compatible = "fixed-clock";
@@ -299,6 +309,12 @@
 			compatible = "epson,rx8025t";
 			reg = <0x32>;
 	};
+
+        at24@50 {
+                compatible = "atmel,24c32";
+                pagesize = <64>;
+                reg = <0x50>;
+        };
 
 	at9555: at9555@20 {
 			compatible = "analogtek,at9555";
@@ -577,19 +593,18 @@
         status = "okay";
 };
 
-// &spi5 {
-// 	pinctrl-names = "default", "sleep";
-// 	pinctrl-0 = <&spi5_pins_a>;
-// 	pinctrl-1 = <&spi5_sleep_pins_a>;
-// 	cs-gpios = <&gpioi 3 0>;
-// 	status = "okay";
-
-// 	spidev@0 {
-// 		compatible = "rohm,dh2228fv";
-// 		spi-max-frequency = <20000000>;
-// 		reg = <0>;
-// 	};
-// };
+&spi5 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&spi5_pins_a>;
+	pinctrl-1 = <&spi5_sleep_pins_a>;
+	status = "okay";
+	spidev@0 {
+		compatible = "rohm,dh2228fv";
+		cs-gpios = <&gpioi 3 0>;
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+	};
+};
 
 #if 1
 &i2s1 {
