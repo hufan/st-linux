@@ -984,6 +984,7 @@ struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45)
 	if (r)
 		return ERR_PTR(r);
 
+	printk("alex eth test phy_id=%d ,\n",phy_id);
 	if(0x10a == phy_id)
 	{
 	      printk (KERN_INFO "YT8511, abt to set 125m clk out, phyaddr=%d, phyid=%08x\n",addr, phy_id);
