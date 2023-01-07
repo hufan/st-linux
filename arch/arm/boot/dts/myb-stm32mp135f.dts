@@ -179,23 +179,29 @@
 			regulator-max-microvolt = <2800000>;
 	};
 
+	sgtl5000_clk: sgtl5000-oscillator  {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency  = <12000000>;
+	};
+
 	sound {
-        compatible = "simple-audio-card";
-        simple-audio-card,format = "i2s";
-        simple-audio-card,name = "sgtl5000";
-        simple-audio-card,routing =
-							"MIC_IN", "Mic Jack",
-							"Mic Jack", "Mic Bias",
-							"Headphone Jack", "HP_OUT";
+        	compatible = "simple-audio-card";
+        	simple-audio-card,format = "i2s";
+        	simple-audio-card,name = "sgtl5000";
+        	simple-audio-card,routing =
+					"MIC_IN", "Mic Jack",
+					"Mic Jack", "Mic Bias",
+					"Headphone Jack", "HP_OUT";
         simple-audio-card,cpu {
             sound-dai = <&i2s1>;
         };
 
         simple-audio-card,codec {
             sound-dai = <&sgtl5000>;
-						bitclock-master;
-						frame-master;
-						system-clock-frequency = <12000000>;
+		bitclock-master;
+		frame-master;
+		system-clock-frequency = <12000000>;
         };
     };
 
@@ -654,24 +660,24 @@
 	};
 
 	sgtl5000: audio-codec@a {
-			compatible = "fsl,sgtl5000";
-			reg = <0x0a>;
-			#sound-dai-cells = <0>;
+		compatible = "fsl,sgtl5000";
+		reg = <0x0a>;
+		#sound-dai-cells = <0>;
 
-			VDDIO-supply = <&v3v3_ao>;
-			VDDA-supply = <&v3v3_ao>;
-			VDDD-supply = <&vdd1v8>;
-			status = "okay";
-			port {
-				#address-cells = <0x1>;
-				#size-cells = <0x0>;
-					port@0 {
-						reg = <0>;
-							sgtl5000_endpoint: endpoint {
-							remote-endpoint = <&i2s1_endpoint>;
-						};
+		VDDIO-supply = <&v3v3_ao>;
+		VDDA-supply = <&v3v3_ao>;
+		VDDD-supply = <&vdd1v8>;
+		status = "okay";
+		port {
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+				port@0 {
+					reg = <0>;
+						sgtl5000_endpoint: endpoint {
+						remote-endpoint = <&i2s1_endpoint>;
 					};
-			};
+				};
+		};
 	};
 
 
@@ -702,23 +708,29 @@
 };
 
 &i2s1 {
-    // clocks = <&rcc SPI1>, <&rcc SPI1_K>, <&scmi0_clk CK_SCMI0_PLL3_Q>, <&scmi0_clk CK_SCMI0_PLL3_R>;
-	// clocks = <&rcc SPI1_K>, <&rcc SPI1_K>, <&scmi0_clk CK_SCMI_PLL3_Q>, <&scmi0_clk CK_SCMI_PLL3_R>;
-	// clocks = <&rcc SPI1_K>, <&rcc SPI1_K>, <&scmi0_clk SPI1_K>, <&scmi0_clk SPI1_K>;
-	// clocks = <&rcc SPI1>, <&rcc SPI1_K>, <&rcc PLL3_Q>, <&rcc PLL3_R>;
-	// clocks = <&rcc PLL3_R>, <&rcc PLL3_R>, <&rcc PLL3_Q>, <&rcc PLL3_R>;
+    #clock-cells = <0>;
+    //clocks = <&rcc SPI1>, <&rcc SPI1_K>, <&rcc PLL3_Q>, <&rcc PLL3_R>;
+    //clocks = <&rcc SPI1>, <&rcc SPI1_K>, <&scmi0_clk CK_SCMI0_PLL3_Q>, <&scmi0_clk CK_SCMI0_PLL3_R>;
+    //clock-names = "pclk", "i2sclk", "x8k", "x11k";
 
-	#clock-cells = <0>;
-	//clocks = <&rcc SPI1>, <&rcc SPI1_K>, <&rcc PLL3_Q>, <&rcc PLL3_R>;
+    //pinctrl-names = "default", "sleep";
+    //pinctrl-0 = <&i2s1_pins_a>;
+    //pinctrl-1 = <&i2s1_pins_sleep_a>;
+
+    status = "disabled";
+
     clock-names = "pclk", "i2sclk", "x8k", "x11k";
-
     pinctrl-names = "default", "sleep";
     pinctrl-0 = <&i2s1_pins_a>;
     pinctrl-1 = <&i2s1_pins_sleep_a>;
-    status = "disabled";
+
     i2s1_port: port {
+
         i2s1_endpoint: endpoint {
             remote-endpoint = <&sgtl5000_endpoint>;
         };
+
     };
+
 };
+

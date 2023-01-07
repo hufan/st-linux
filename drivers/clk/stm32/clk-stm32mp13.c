@@ -661,7 +661,8 @@ static CLK_STM32_GATE(sai1, "pclk2", 0, GATE_SAI1);
 static CLK_STM32_GATE(sai2, "pclk2", 0, GATE_SAI2);
 
 static CLK_STM32_GATE(syscfg, "pclk3", 0, GATE_SYSCFG);
-static CLK_STM32_GATE(vref, "pclk3", 0, GATE_VREF);
+//static CLK_STM32_GATE(vref, "pclk3", 0, GATE_VREF);
+static CLK_STM32_GATE(spi1, "pclk2", 0, SECF_NONE);
 static CLK_STM32_GATE(dts, "pclk3", 0, GATE_DTS);
 static CLK_STM32_GATE(pmbctrl, "pclk3", 0, GATE_PMBCTRL);
 static CLK_STM32_GATE(hdp, "pclk3", 0, GATE_HDP);
@@ -798,7 +799,8 @@ static const struct clock_config stm32mp13_clock_cfg[] = {
 	STM32_GATE_CFG(SAI1, sai1, SECF_NONE),
 	STM32_GATE_CFG(SAI2, sai2, SECF_NONE),
 	STM32_GATE_CFG(SYSCFG, syscfg, SECF_NONE),
-	STM32_GATE_CFG(VREF, vref, SECF_VREF),
+	/*STM32_GATE_CFG(VREF, vref, SECF_VREF), */
+	STM32_GATE_CFG(SPI1, spi1, SECF_NONE),
 	STM32_GATE_CFG(DTS, dts, SECF_NONE),
 	STM32_GATE_CFG(PMBCTRL, pmbctrl, SECF_NONE),
 	STM32_GATE_CFG(HDP, hdp, SECF_NONE),
@@ -840,6 +842,7 @@ static const struct clock_config stm32mp13_clock_cfg[] = {
 	STM32_GATE_CFG(DDRPERFM, ddrperfm, SECF_NONE),
 	STM32_GATE_CFG(ETH1STP, eth1stp, SECF_ETH1STP),
 	STM32_GATE_CFG(ETH2STP, eth2stp, SECF_ETH2STP),
+	/*STM32_GATE_CFG(SPI1_K, spi1_k, SECF_NONE),*/
 
 	/* Kernel clocks */
 	STM32_COMPOSITE_CFG(SDMMC1_K, sdmmc1_k, SECF_SDMMC1),
