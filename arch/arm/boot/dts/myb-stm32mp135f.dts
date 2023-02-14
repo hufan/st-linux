@@ -213,6 +213,17 @@
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&dcmiapp_pins_mx>;
 	pinctrl-1 = <&dcmiapp_sleep_pins_mx>;
+
+	port {
+			dcmipp_0: endpoint {
+					remote-endpoint = <&ov5640_0>;
+					bus-width = <8>;
+					hsync-active = <0>;
+					vsync-active = <0>;
+					pclk-sample = <0>;
+					pclk-max-frequency = <120000000>;
+			};
+	};
 };
 
 &dma1 {
@@ -525,6 +536,33 @@
 					remote-endpoint = <&usbotg_hs_ep>;
 				};
 			};
+		};
+	};
+
+	ov5640: camera@3c {
+		compatible = "ovti,ov5640";
+		reg = <0x3c>;
+		clocks = <&clk_ext_camera>;
+		clock-names = "xclk";
+		DOVDD-supply = <&v2v8>;
+		powerdown-gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+		reset-gpios = <&gpioa 19 (GPIO_ACTIVE_LOW | GPIO_PUSH_PULL)>;
+
+		// powerdown-gpios = <&at9555 9 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+		// reset-gpios = <&at9555 8 (GPIO_ACTIVE_LOW | GPIO_PUSH_PULL)>;
+
+		rotation = <180>;
+		status = "okay";
+		port {
+				ov5640_0: endpoint {
+					remote-endpoint = <&dcmipp_0>;
+					bus-width = <8>;
+					data-shift = <2>; /* lines 9:2 are used */
+					hsync-active = <0>;
+					vsync-active = <0>;
+					pclk-sample = <1>;
+					pclk-max-frequency = <24000000>;
+				};
 		};
 	};
 
