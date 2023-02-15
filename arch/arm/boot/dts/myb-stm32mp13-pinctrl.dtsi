@@ -24,7 +24,7 @@
 				<STM32_PINMUX('D', 3, AF13)>, 	 /* DCMPIPP_D5 */
 				<STM32_PINMUX('B', 8, AF13)>, 	 /* DCMPIPP_D6 */
 				<STM32_PINMUX('E', 9, AF13)>, 	 /* DCMPIPP_D7 */
-				<STM32_PINMUX('B', 7, AF13)>, 	 /* DCMPIPP_PIXCLK */
+				<STM32_PINMUX('B', 7, AF14)>, 	 /* DCMPIPP_PIXCLK */
 				<STM32_PINMUX('G', 9, AF13)>, 	 /* DCMPIPP_VSYNC */
 				<STM32_PINMUX('H', 8, AF13)>; 	 /* DCMPIPP_HSYNC */
 		};
