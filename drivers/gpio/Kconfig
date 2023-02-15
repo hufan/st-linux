@@ -960,6 +960,12 @@ config GPIO_ADP5588
 	  This option enables support for 18 GPIOs found
 	  on Analog Devices ADP5588 GPIO Expanders.
 
+config GPIO_AT9555
+       tristate "at9555 I/O ports"
+       depends on OF && I2C
+       help
+         Select this to enable the AT9555 GPIO driver
+
 config GPIO_ADP5588_IRQ
 	bool "Interrupt controller support for ADP5588"
 	depends on GPIO_ADP5588=y
