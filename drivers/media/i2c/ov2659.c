@@ -1267,7 +1267,7 @@ static int ov2659_power_off(struct device *dev)
 
 	dev_dbg(&client->dev, "%s:\n", __func__);
 
-	gpiod_set_value(ov2659->pwdn_gpio, 1);
+	gpiod_set_value_cansleep(ov2659->pwdn_gpio, 1);
 
 	clk_disable_unprepare(ov2659->clk);
 
@@ -1290,12 +1290,12 @@ static int ov2659_power_on(struct device *dev)
 		return ret;
 	}
 
-	gpiod_set_value(ov2659->pwdn_gpio, 0);
+	gpiod_set_value_cansleep(ov2659->pwdn_gpio, 0);
 
 	if (ov2659->resetb_gpio) {
-		gpiod_set_value(ov2659->resetb_gpio, 1);
+		gpiod_set_value_cansleep(ov2659->resetb_gpio, 1);
 		usleep_range(500, 1000);
-		gpiod_set_value(ov2659->resetb_gpio, 0);
+		gpiod_set_value_cansleep(ov2659->resetb_gpio, 0);
 		usleep_range(3000, 5000);
 	}
 
