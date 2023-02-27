@@ -460,6 +460,36 @@
 		};
 	};
 
+	uart5_pins_a: uart5-0 {
+			pins1 {
+					pinmux = <STM32_PINMUX('A', 0, AF8)>; /* UART5_TX */
+					bias-disable;
+					drive-push-pull;
+					slew-rate = <0>;
+			};
+			pins2 {
+					pinmux = <STM32_PINMUX('F', 13, AF8)>; /* UART5_RX */
+					bias-disable;
+			};
+	};
+
+	uart5_sleep_pins_a: uart5-sleep-0 {
+			pins {
+					pinmux = <STM32_PINMUX('A', 0, ANALOG)>, /* UART5_TX */
+								<STM32_PINMUX('F', 13, ANALOG)>; /* UART5_RX */
+			};
+	};
+
+	uart5_idle_pins_a: uart5-idle-0 {
+			pins1 {
+					pinmux = <STM32_PINMUX('A', 0, ANALOG)>; /* UART4_TX */
+			};
+			pins2 {
+					pinmux = <STM32_PINMUX('F', 13, AF8)>; /* UART4_RX */
+					bias-disable;
+			};
+	};
+
 	uart8_pins_a: uart8-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('E', 1, AF8)>; /* UART8_TX */
