@@ -202,22 +202,29 @@
 	sound: audio {
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
-		simple-audio-card,bitclock-master = <&codec_dai>;
-		simple-audio-card,frame-master = <&codec_dai>;
-		simple-audio-card,mclk-fs = <256>;
-		simple-audio-card,widgets =
-				"Microphone", "Microphone Jack",
-				"Headphone", "Headphone Jack",
-				"Speaker", "Speaker Ext",
-				"Line", "Line In Jack";
-		simple-audio-card,routing =
-				"MIC_IN", "Microphone Jack",
-				"Microphone Jack", "Mic Bias",
-				"Headphone Jack", "HP_OUT";
+		// simple-audio-card,bitclock-master = <&codec_dai>;
+		// simple-audio-card,frame-master = <&codec_dai>;
+		// simple-audio-card,mclk-fs = <256>;
+
+	        simple-audio-card,widgets =
+                        "Microphone", "Microphone Jack",
+                        "Headphone", "Headphone Jack",
+                        "Speaker", "Speaker Ext",
+                        "Line", "Line In Jack";
+                simple-audio-card,routing =
+                        "MIC_IN", "Microphone Jack",
+                        "Microphone Jack", "Mic Bias",
+                        "LINE_IN", "Line In Jack",
+                        "Headphone Jack", "HP_OUT",
+                        "Speaker Ext", "LINE_OUT";
+
 
 		cpu_dai: simple-audio-card,cpu {
 				sound-dai = <&i2s1>;
+				frame-master;
+				bitclock-master;
 		};
+
 		codec_dai: simple-audio-card,codec {
 				sound-dai = <&sgtl5000>;
 				bitclock-master;
