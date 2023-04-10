@@ -15,8 +15,8 @@
 #include "myb-stm32mp13-pinctrl.dtsi"
 
 / {
-	model = "MYIR STM32MP135F Board";
-	compatible = "st,stm32mp135f-dk", "st,stm32mp135";
+        model = "STMicroelectronics STM32MP135F-DK Discovery Board";
+        compatible = "st,stm32mp135f-dk", "st,stm32mp135";
 
 	aliases {
 		ethernet0 = &eth1;
@@ -68,7 +68,7 @@
 
 	memory@c0000000 {
 		device_type = "memory";
-		reg = <0xc0000000 0x20000000>;
+		reg = <0xc0000000 0x10000000>;
 	};
 
 	gpio-keys {
@@ -98,13 +98,13 @@
 		#size-cells = <1>;
 		ranges;
 
-		optee_framebuffer@dd000000 {
-			reg = <0xdd000000 0x1000000>;
+		optee_framebuffer@ceb00000 {
+			reg = <0xceb00000 0x1000000>;
 			no-map;
 		};
 
-		optee@de000000 {
-			reg = <0xde000000 0x2000000>;
+		optee@cfb00000 {
+			reg = <0xcfb00000 0x500000>;
 			no-map;
 		};
 	};
