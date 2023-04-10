@@ -174,8 +174,8 @@
 	vddadcvref: fixedregulator@0 {
 			compatible = "regulator-fixed";
 			regulator-name = "vddadcvref";
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
 	};
 
 	vddadc: fixedregulator@0 {
@@ -187,7 +187,7 @@
 
 	vdd1v8: vdd1v8 {
 			compatible = "regulator-fixed";
-			regulator-name = "vddadc";
+			regulator-name = "vdd1v8";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
 	};
@@ -235,11 +235,18 @@
 	pinctrl-0 = <&adc1_usb_cc_pins_a>;
 	vdda-supply = <&vddadc>;
 	vref-supply = <&vddadcvref>;
+	vdd-supply = <&vddadc>;
 	status = "okay";
 	adc1: adc@0 {
-		st,min-sample-time-nsecs = <5000>;
-		st,adc-channels = <2 8>;
-		status = "okay";
+			status = "okay";
+			channel@2 {
+					reg = <2>;
+					st,min-sample-time-ns = <5000>;
+			};
+			channel@8 {
+					reg = <8>;
+					st,min-sample-time-ns = <5000>;
+			};
 	};
 };
 
