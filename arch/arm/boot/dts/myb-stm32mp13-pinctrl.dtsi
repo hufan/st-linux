@@ -9,8 +9,8 @@
 
 	adc1_usb_cc_pins_a: adc1-usb-cc-pins-0 {
 		pins {
-			pinmux = <STM32_PINMUX('A', 5, ANALOG)>, /* ADC1 in6 */
-				<STM32_PINMUX('F', 11, ANALOG)>; /* ADC1 in12 */
+			pinmux = <STM32_PINMUX('A', 5, ANALOG)>, /* ADC1 in2 */
+				<STM32_PINMUX('F', 11, ANALOG)>; /* ADC1 in8 */
 		};
 	};
 
