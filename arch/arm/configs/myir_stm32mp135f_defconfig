@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 5.15.24 Kernel Configuration
+# Linux/arm 5.15.67 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="arm-ostl-linux-gnueabi-gcc (GCC) 11.2.0"
 CONFIG_CC_IS_GCC=y
@@ -2284,8 +2284,17 @@ CONFIG_MDIO_BCM_UNIMAC=m
 #
 CONFIG_PCS_XPCS=y
 # end of PCS device drivers
-
-# CONFIG_PPP is not set
+CONFIG_PPP=y
+CONFIG_PPP_BSDCOMP=y
+CONFIG_PPP_DEFLATE=y
+CONFIG_PPP_FILTER=y
+CONFIG_PPP_MPPE=y
+CONFIG_PPP_MULTILINK=y
+CONFIG_PPPOE=y
+CONFIG_PPTP=m
+CONFIG_PPPOL2TP=m
+CONFIG_PPP_ASYNC=y
+CONFIG_PPP_SYNC_TTY=y
 # CONFIG_SLIP is not set
 CONFIG_USB_NET_DRIVERS=y
 # CONFIG_USB_CATC is not set
@@ -4847,7 +4856,7 @@ CONFIG_USB_R8A66597_HCD=m
 #
 # USB Device Class drivers
 #
-CONFIG_USB_ACM=m
+CONFIG_USB_ACM=y
 # CONFIG_USB_PRINTER is not set
 # CONFIG_USB_WDM is not set
 # CONFIG_USB_TMC is not set
@@ -4916,37 +4925,17 @@ CONFIG_USB_ISP1760_DUAL_ROLE=y
 #
 # USB port drivers
 #
-# CONFIG_USB_SERIAL is not set
+CONFIG_USB_SERIAL=y
+
+CONFIG_USB_SERIAL_WWAN=y
+CONFIG_USB_SERIAL_OPTION=y
+
 
 #
 # USB Miscellaneous drivers
-#
-# CONFIG_USB_EMI62 is not set
-# CONFIG_USB_EMI26 is not set
-# CONFIG_USB_ADUTUX is not set
-# CONFIG_USB_SEVSEG is not set
-# CONFIG_USB_LEGOTOWER is not set
-# CONFIG_USB_LCD is not set
-# CONFIG_USB_CYPRESS_CY7C63 is not set
-# CONFIG_USB_CYTHERM is not set
-# CONFIG_USB_IDMOUSE is not set
-# CONFIG_USB_FTDI_ELAN is not set
-# CONFIG_USB_APPLEDISPLAY is not set
-# CONFIG_APPLE_MFI_FASTCHARGE is not set
-# CONFIG_USB_SISUSBVGA is not set
-# CONFIG_USB_LD is not set
-# CONFIG_USB_TRANCEVIBRATOR is not set
-# CONFIG_USB_IOWARRIOR is not set
-# CONFIG_USB_TEST is not set
-# CONFIG_USB_EHSET_TEST_FIXTURE is not set
-# CONFIG_USB_ISIGHTFW is not set
-# CONFIG_USB_YUREX is not set
-# CONFIG_USB_EZUSB_FX2 is not set
-# CONFIG_USB_HUB_USB251XB is not set
+
 CONFIG_USB_HSIC_USB3503=y
-# CONFIG_USB_HSIC_USB4604 is not set
-# CONFIG_USB_LINK_LAYER_TEST is not set
-# CONFIG_USB_CHAOSKEY is not set
+
 
 #
 # USB Physical Layer drivers
@@ -4972,13 +4961,7 @@ CONFIG_USB_GADGET_STORAGE_NUM_BUFFERS=2
 #
 # USB Peripheral Controller
 #
-# CONFIG_USB_FUSB300 is not set
-# CONFIG_USB_FOTG210_UDC is not set
-# CONFIG_USB_GR_UDC is not set
-# CONFIG_USB_R8A66597 is not set
-# CONFIG_USB_PXA27X is not set
-# CONFIG_USB_MV_UDC is not set
-# CONFIG_USB_MV_U3D is not set
+
 CONFIG_USB_SNP_CORE=y
 CONFIG_USB_SNP_UDC_PLAT=y
 # CONFIG_USB_M66592 is not set
@@ -5042,7 +5025,7 @@ CONFIG_USB_ETH_RNDIS=y
 # CONFIG_USB_G_NCM is not set
 # CONFIG_USB_GADGETFS is not set
 # CONFIG_USB_FUNCTIONFS is not set
-# CONFIG_USB_MASS_STORAGE is not set
+CONFIG_USB_MASS_STORAGE=m
 # CONFIG_USB_G_SERIAL is not set
 # CONFIG_USB_MIDI_GADGET is not set
 # CONFIG_USB_G_PRINTER is not set
@@ -5278,6 +5261,7 @@ CONFIG_RTC_DRV_S35390A=m
 # CONFIG_RTC_DRV_RX8010 is not set
 CONFIG_RTC_DRV_RX8581=m
 # CONFIG_RTC_DRV_RX8025 is not set
+CONFIG_RTC_DRV_RX8025T=y
 CONFIG_RTC_DRV_EM3027=y
 # CONFIG_RTC_DRV_RV3028 is not set
 # CONFIG_RTC_DRV_RV3032 is not set
@@ -7125,4 +7109,3 @@ CONFIG_ARCH_USE_MEMTEST=y
 # end of Kernel Testing and Coverage
 # end of Kernel hacking
 CONFIG_GPIO_AT9555=y
-CONFIG_RTC_DRV_RX8025T=y
