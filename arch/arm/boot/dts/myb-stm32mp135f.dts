@@ -87,7 +87,7 @@
 		led-blue {
 			function = LED_FUNCTION_HEARTBEAT;
 			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&at9555 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioh 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "heartbeat";
 			default-state = "off";
 		};
@@ -565,19 +565,12 @@
 			reg = <0x50>;
 	};
 
-	at9555: at9555@20 {
-		compatible = "analogtek,at9555";
-		reg = <0x20>;
-		#gpio-cells = <2>;
-		gpio_base = <160>;
-	};
-
 	ptn5150: ptn5150@3d {
 		compatible = "nxp,ptn5150";
 		reg = <0x3d>;
 
 		status = "okay";
-		connect-gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
 		connector {
 			compatible = "usb-c-connector";
 			label = "USB-C";
@@ -595,8 +588,8 @@
 		clocks = <&clk_ext_camera>;
 		clock-names = "xvclk";
 		DOVDD-supply = <&v2v8>;
-		powerdown-gpios = <&at9555 11 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
-		reset-gpios = <&at9555 10 (GPIO_ACTIVE_LOW | GPIO_PUSH_PULL)>;
+		powerdown-gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PUSH_PULL)>;
 		// rotation = <180>;
 		status = "okay";
 			port {
