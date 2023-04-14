@@ -90,6 +90,7 @@ static void ptn5150_check_state(struct ptn5150_info *info)
 		extcon_set_state_sync(info->edev, EXTCON_USB_HOST, false);
 		gpiod_set_value_cansleep(info->vbus_gpiod, 0);
 		extcon_set_state_sync(info->edev, EXTCON_USB, true);
+		usb_role_switch_set_role(info->role_sw, USB_ROLE_DEVICE);
 		printk("PTN5150_DFP_ATTACHED alex");
 		break;
 	case PTN5150_UFP_ATTACHED:
@@ -102,6 +103,7 @@ static void ptn5150_check_state(struct ptn5150_info *info)
 			gpiod_set_value_cansleep(info->vbus_gpiod, 1);
 
 		extcon_set_state_sync(info->edev, EXTCON_USB_HOST, true);
+		usb_role_switch_set_role(info->role_sw, USB_ROLE_HOST);
 		break;
 	default:
 		break;
